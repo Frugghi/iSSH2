@@ -20,7 +20,7 @@ The current version supports Libssh2 v1.4.3 and OpenSSL 1.0.1e and armv7, armv7s
 ## How to use
 
 1. Download the script
-2. Run iSSH.sh in Terminal
+2. Run iSSH2.sh in Terminal
 3. Take a cup of coffee while waiting
 
 ## License
