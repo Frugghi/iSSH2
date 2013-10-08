@@ -7,7 +7,7 @@ mkdir -p "${LIBSSHDIR}"
 if [ ! -f "${LIBSSHDIR}/libssh2-${LIBSSH_VERSION}.tar.gz" ];
 then
 	echo "Downloading libssh2-${LIBSSH_VERSION}.tar.gz"
-    curl --progress-bar "http://www.libssh2.org/download/libssh2-${LIBSSH_VERSION}.tar.gz" > "${LIBSSHDIR}/libssh2-${LIBSSH_VERSION}.tar.gz"
+	curl --progress-bar "http://www.libssh2.org/download/libssh2-${LIBSSH_VERSION}.tar.gz" > "${LIBSSHDIR}/libssh2-${LIBSSH_VERSION}.tar.gz"
 else
 	echo "libssh2-${LIBSSH_VERSION}.tar.gz already exists"
 fi
@@ -46,7 +46,7 @@ do
 
 	if [ -f "${LIBSSH2DIR}/lib/libssh2.a" ];
 	then
-		echo "libssh2.a already exists."
+		echo "libssh2.a for ${ARCH} already exists."
 		continue
 	fi
 
@@ -78,11 +78,14 @@ do
 done
 
 echo "Building fat library..."
-rm -rf "${BASEPATH}/lib/libssh2.a"
-eval "${LIPO_SSH2} -output ${BASEPATH}/lib/libssh2.a"
+rm -rf "${BASEPATH}/libssh2/lib/"
+mkdir -p "${BASEPATH}/libssh2/lib/"
+eval "${LIPO_SSH2} -output ${BASEPATH}/libssh2/lib/libssh2.a"
 
 echo "Copying headers..."
-cp -RL "${LIBSSHDIR}/src/include/" "${BASEPATH}/include/"
+rm -rf "${BASEPATH}/libssh2/include/"
+mkdir -p "${BASEPATH}/libssh2/include/"
+cp -RL "${LIBSSHDIR}/src/include/" "${BASEPATH}/libssh2/include/"
 
 echo "Cleaning up..."
 rm -rf "${LIBSSHDIR}/src/"

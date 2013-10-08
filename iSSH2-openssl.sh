@@ -50,7 +50,7 @@ do
 	echo "Building for ${PLATFORM} ${ARCH}, please wait..."
 	if [ -f "${OPENSSLDIR}/lib/libssl.a" -a -f "${OPENSSLDIR}/lib/libcrypto.a" ];
 	then
-		echo "libssl.a and libcrypto.a already exist."
+		echo "libssl.a and libcrypto.a for ${ARCH} already exist."
 		continue
 	fi
 
@@ -81,13 +81,15 @@ do
 done
 
 echo "Building fat library..."
-rm -rf "${BASEPATH}/lib/libssl.a"
-rm -rf "${BASEPATH}/lib/libcrypto.a"
-eval "${LIPO_LIBSSL} -output ${BASEPATH}/lib/libssl.a"
-eval "${LIPO_LIBCRYPTO} -output ${BASEPATH}/lib/libcrypto.a"
+rm -rf "${BASEPATH}/openssl/lib/"
+mkdir -p "${BASEPATH}/openssl/lib/"
+eval "${LIPO_LIBSSL} -output ${BASEPATH}/openssl/lib/libssl.a"
+eval "${LIPO_LIBCRYPTO} -output ${BASEPATH}/openssl/lib/libcrypto.a"
 
 echo "Copying headers..."
-cp -RL "${LIBSSLDIR}/src/include/" "${BASEPATH}/include/"
+rm -rf "${BASEPATH}/openssl/include/"
+mkdir -p "${BASEPATH}/openssl/include/"
+cp -RL "${LIBSSLDIR}/src/include/" "${BASEPATH}/openssl/include/"
 
 echo "Cleaning up..."
 rm -rf "${LIBSSLDIR}/src/"
