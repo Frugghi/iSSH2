@@ -23,12 +23,9 @@
 # THE SOFTWARE.                                                                #
 ################################################################################
 
-                               #################
-################################ Configuration #################################
-#                              #################                               #
- LIBSSL_VERSION="1.0.1g"
- LIBSSH_VERSION="1.4.3"
-################################################################################
+export SCRIPTNAME="iSSH2"
+
+#Functions
 
 cleanupFail () {
 	echo "Build failed, cleaning up temporary files..."
@@ -41,22 +38,135 @@ cleanupAll () {
 	rm -rf "${TEMPPATH}"
 }
 
-echo "Initializing..."
+getLibssh2Version () {
+	if type git >/dev/null 2>&1; then
+		LIBSSH_VERSION=`git ls-remote --tags git://git.libssh2.org/libssh2.git | egrep "libssh2-*" | cut -f 2 -d - | sort -t . -r | head -n 1`
+		LIBSSH_AUTO=true
+	else
+		echo "Install git to automatically get the latest Libssh2 version or use the --libssh2 argument"
+		exit 2
+	fi
+}
 
-export LIBSSL_VERSION
-export LIBSSH_VERSION
+getOpensslVersion () {
+	if type git >/dev/null 2>&1; then
+		LIBSSL_VERSION=`git ls-remote --tags git://git.openssl.org/openssl.git | egrep "OpenSSL(_[0-9]+[a-zA-Z]*)+$" | cut -f 2,3,4 -d _ | sort -t _ -r | head -n 1 | tr _ . `
+		LIBSSL_AUTO=true
+	else
+		echo "Install git to automatically get the latest OpenSSL version or use the --openssl argument"
+		exit 2
+	fi
+}
 
+usageHelp () {
+	echo
+	echo "Usage: $SCRIPTNAME.sh [options]"
+	echo
+	echo "This script download and build OpenSSL and Libssh2 libraries."
+	echo
+	echo "Options:"
+    echo "  -a, --archs=[ARCHS]            build for [ARCHS] architectures"
+    echo "  -i, --iphoneosMinVersion=VERS  set iPhoneOS minimum version to VERS"
+    echo "  -s, --sdkVersion=VERS          use SDK version VERS"
+    echo "  -l, --libssh2=VERS             download and build Libssh2 version VERS"
+    echo "  -o, --openssl=VERS             download and build OpenSSL version VERS"
+    echo "  -h, --help                     display this help and exit"
+	echo
+	exit 1
+}
+
+#Config
+
+export SDK_VERSION=
+export LIBSSH_VERSION=
+export LIBSSL_VERSION=
 export IPHONEOS_MINVERSION="6.0"
 export ARCHS="i386 x86_64 armv7 armv7s arm64"
 
+while getopts ':a:i:l:o:s:h-' OPTION ; do
+  case "$OPTION" in
+    a  ) ARCHS="$OPTARG" ;;
+    i  ) IPHONEOS_MINVERSION="$OPTARG" ;;
+    s  ) SDK_VERSION="$OPTARG" ;;
+    l  ) LIBSSH_VERSION="$OPTARG" ;;
+    o  ) LIBSSL_VERSION="$OPTARG" ;;
+    h  ) usageHelp ;;
+    -  ) [ $OPTIND -ge 1 ] && optind=$(expr $OPTIND - 1 ) || optind=$OPTIND
+         eval OPTION="\$$optind"
+         OPTARG=$(echo $OPTION | cut -d'=' -f2)
+         OPTION=$(echo $OPTION | cut -d'=' -f1)
+         case $OPTION in
+             --archs   ) ARCHS="$OPTARG"          ;;
+             --openssl ) LIBSSL_VERSION="$OPTARG" ;;
+             --libssh2 ) LIBSSH_VERSION="$OPTARG" ;;
+             --sdkVersion ) SDK_VERSION="$OPTARG" ;;
+             --iphoneosMinVersion) IPHONEOS_MINVERSION="$OPTARG" ;;
+             --help    ) usageHelp ;; 
+             * )  echo "$SCRIPTNAME: Invalid option '$OPTION'" 
+             	  echo "Try '$SCRIPTNAME --help' for more information."
+             	  exit 1 ;;
+         esac
+       OPTIND=1
+       shift
+      ;;
+    \?  ) echo "$SCRIPTNAME: Invalid option -- $OPTION"
+    	  echo "Try '$SCRIPTNAME --help' for more information."
+    	  exit 1 ;;
+  esac
+done
+
+echo "Initializing..."
+
+LIBSSH_AUTO=false
+if [ -z "$LIBSSH_VERSION" ]; then
+	getLibssh2Version
+fi
+
+LIBSSL_AUTO=false
+if [ -z "$LIBSSL_VERSION" ]; then
+	getOpensslVersion
+fi
+
+SDK_AUTO=false
+if [ -z "$SDK_VERSION" ]; then
+ 	SDK_VERSION=`xcrun --sdk iphoneos --show-sdk-version`
+ 	SDK_AUTO=true
+fi
+
+export CLANG=`xcrun --find clang`
+export DEVELOPER=`xcode-select --print-path`
+
 export BASEPATH="${PWD}"
-export TEMPPATH="/tmp/iSSH2" 
+export TEMPPATH="/tmp/$SCRIPTNAME" 
 export LIBSSLDIR="${TEMPPATH}/openssl-${LIBSSL_VERSION}"
 export LIBSSHDIR="${TEMPPATH}/libssh2-${LIBSSH_VERSION}"
 
-export SDK_VERSION=`xcrun --sdk iphoneos --show-sdk-version`
-export CLANG=`xcrun --find clang`
-export DEVELOPER=`xcode-select --print-path`
+#Env
+
+echo
+if $LIBSSH_AUTO; then
+	echo "Libssh2 version: $LIBSSH_VERSION (Automatically detected)"
+else
+	echo "Libssh2 version: $LIBSSH_VERSION"
+fi
+
+if $LIBSSL_AUTO; then
+	echo "OpenSSL version: $LIBSSL_VERSION (Automatically detected)"
+else
+	echo "OpenSSL version: $LIBSSL_VERSION"
+fi
+
+if $SDK_AUTO; then
+	echo "SDK version: $SDK_VERSION (Automatically detected)"
+else
+	echo "SDK version: $SDK_VERSION"
+fi
+
+echo "Architectures: $ARCHS"
+echo "iPhoneOS Min Version: $IPHONEOS_MINVERSION"
+echo
+
+#Build
 
 set -e
 
