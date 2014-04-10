@@ -67,12 +67,12 @@ usageHelp () {
 	echo "This script download and build OpenSSL and Libssh2 libraries."
 	echo
 	echo "Options:"
-    echo "  -a, --archs=[ARCHS]            build for [ARCHS] architectures"
-    echo "  -i, --iphoneosMinVersion=VERS  set iPhoneOS minimum version to VERS"
-    echo "  -s, --sdkVersion=VERS          use SDK version VERS"
-    echo "  -l, --libssh2=VERS             download and build Libssh2 version VERS"
-    echo "  -o, --openssl=VERS             download and build OpenSSL version VERS"
-    echo "  -h, --help                     display this help and exit"
+	echo "  -a, --archs=[ARCHS]            build for [ARCHS] architectures"
+	echo "  -i, --iphoneosMinVersion=VERS  set iPhoneOS minimum version to VERS"
+	echo "  -s, --sdkVersion=VERS          use SDK version VERS"
+	echo "  -l, --libssh2=VERS             download and build Libssh2 version VERS"
+	echo "  -o, --openssl=VERS             download and build OpenSSL version VERS"
+	echo "  -h, --help                     display this help and exit"
 	echo
 	exit 1
 }
