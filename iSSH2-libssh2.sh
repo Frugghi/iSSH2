@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
                                    #########
 #################################### iSSH2 #####################################
 #                                  #########                                   #
@@ -42,7 +42,7 @@ echo "Extracting libssh2-${LIBSSH_VERSION}.tar.gz"
 tar -zxkf "${LIBSSHDIR}/libssh2-${LIBSSH_VERSION}.tar.gz" -C "${LIBSSHDIR}/src" --strip-components 1 2>&-
 set -e
 
-LIPO_SSH2="lipo -create"
+echo "Building Libssh2 ${LIBSSH_VERSION}:"
 
 for ARCH in ${ARCHS}
 do
@@ -76,6 +76,7 @@ do
 	rm -rf "${LIBSSHDIR}/tmp/"
 	mkdir -p "${LIBSSHDIR}/tmp/"
 	cp -R "${LIBSSHDIR}/src/" "${LIBSSHDIR}/tmp/"
+	
 	cd "${LIBSSHDIR}/tmp/"
 
 	rm -rf "${LIBSSH2DIR}"
@@ -97,21 +98,16 @@ do
 	make clean >> "${LOG}" 2>&1
 	
 	echo "Building done."
-	cd "${BASEPATH}"
 done
 
 echo "Building fat library..."
 rm -rf "${BASEPATH}/libssh2/lib/"
 mkdir -p "${BASEPATH}/libssh2/lib/"
-eval "${LIPO_SSH2} -output ${BASEPATH}/libssh2/lib/libssh2.a"
+lipo -create ${LIPO_SSH2} -output "${BASEPATH}/libssh2/lib/libssh2.a"
 
 echo "Copying headers..."
 rm -rf "${BASEPATH}/libssh2/include/"
 mkdir -p "${BASEPATH}/libssh2/include/"
 cp -RL "${LIBSSHDIR}/src/include/" "${BASEPATH}/libssh2/include/"
-
-echo "Cleaning up..."
-rm -rf "${LIBSSHDIR}/src/"
-rm -rf "${LIBSSHDIR}/tmp/"
 
 echo "Building done."

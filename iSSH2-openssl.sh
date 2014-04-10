@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
                                    #########
 #################################### iSSH2 #####################################
 #                                  #########                                   #
@@ -42,8 +42,7 @@ echo "Extracting openssl-${LIBSSL_VERSION}.tar.gz"
 tar -zxkf "${LIBSSLDIR}/openssl-${LIBSSL_VERSION}.tar.gz" -C "${LIBSSLDIR}/src" --strip-components 1 2>&-
 set -e
 
-LIPO_LIBSSL="lipo -create"
-LIPO_LIBCRYPTO="lipo -create"
+echo "Building OpenSSL ${LIBSSL_VERSION}:"
 
 for ARCH in ${ARCHS}
 do
@@ -80,6 +79,7 @@ do
 	rm -rf "${LIBSSLDIR}/tmp/"
 	mkdir -p "${LIBSSLDIR}/tmp/"
 	cp -R "${LIBSSLDIR}/src/" "${LIBSSLDIR}/tmp/"
+	
 	cd "${LIBSSLDIR}/tmp/"
 
 	rm -rf "${OPENSSLDIR}"
@@ -96,26 +96,21 @@ do
 	sed -ie "s!^CFLAG=!CFLAG=-isysroot ${SDKROOT} -miphoneos-version-min=${IPHONEOS_MINVERSION} !" "Makefile"
 
 	make >> "${LOG}" 2>&1
-	make install >> "${LOG}" 2>&1
+	make all install_sw >> "${LOG}" 2>&1
 	make clean >> "${LOG}" 2>&1
 
 	echo "Building done."
-	cd "${BASEPATH}"
 done
 
 echo "Building fat library..."
 rm -rf "${BASEPATH}/openssl/lib/"
 mkdir -p "${BASEPATH}/openssl/lib/"
-eval "${LIPO_LIBSSL} -output ${BASEPATH}/openssl/lib/libssl.a"
-eval "${LIPO_LIBCRYPTO} -output ${BASEPATH}/openssl/lib/libcrypto.a"
+lipo -create ${LIPO_LIBSSL}    -output "${BASEPATH}/openssl/lib/libssl.a"
+lipo -create ${LIPO_LIBCRYPTO} -output "${BASEPATH}/openssl/lib/libcrypto.a"
 
 echo "Copying headers..."
 rm -rf "${BASEPATH}/openssl/include/"
 mkdir -p "${BASEPATH}/openssl/include/"
 cp -RL "${LIBSSLDIR}/src/include/" "${BASEPATH}/openssl/include/"
-
-echo "Cleaning up..."
-rm -rf "${LIBSSLDIR}/src/"
-rm -rf "${LIBSSLDIR}/tmp/"
 
 echo "Building done."
