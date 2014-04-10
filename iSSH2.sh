@@ -44,6 +44,7 @@ getLibssh2Version () {
 		LIBSSH_AUTO=true
 	else
 		echo "Install git to automatically get the latest Libssh2 version or use the --libssh2 argument"
+		echo "Try '$SCRIPTNAME --help' for more information."
 		exit 2
 	fi
 }
@@ -54,6 +55,7 @@ getOpensslVersion () {
 		LIBSSL_AUTO=true
 	else
 		echo "Install git to automatically get the latest OpenSSL version or use the --openssl argument"
+		echo "Try '$SCRIPTNAME --help' for more information."
 		exit 2
 	fi
 }
