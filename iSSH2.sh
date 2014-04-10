@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
                                    #########
 #################################### iSSH2 #####################################
 #                                  #########                                   #
@@ -30,6 +30,17 @@
  LIBSSH_VERSION="1.4.3"
 ################################################################################
 
+cleanupFail () {
+	echo "Build failed, cleaning up temporary files..."
+	rm -rf "${LIBSSLDIR}/src/" "${LIBSSLDIR}/tmp/" "${LIBSSHDIR}/src/" "${LIBSSHDIR}/tmp/"
+	exit 1
+}
+
+cleanupAll () {
+	echo "Cleaning up temporary files..."
+	rm -rf "${TEMPPATH}"
+}
+
 echo "Initializing..."
 
 export LIBSSL_VERSION
@@ -39,8 +50,9 @@ export IPHONEOS_MINVERSION="6.0"
 export ARCHS="i386 x86_64 armv7 armv7s arm64"
 
 export BASEPATH="${PWD}"
-export LIBSSLDIR="${BASEPATH}/tmp/openssl-${LIBSSL_VERSION}"
-export LIBSSHDIR="${BASEPATH}/tmp/libssh2-${LIBSSH_VERSION}"
+export TEMPPATH="/tmp/iSSH2" 
+export LIBSSLDIR="${TEMPPATH}/openssl-${LIBSSL_VERSION}"
+export LIBSSHDIR="${TEMPPATH}/libssh2-${LIBSSH_VERSION}"
 
 export SDK_VERSION=`xcrun --sdk iphoneos --show-sdk-version`
 export CLANG=`xcrun --find clang`
@@ -48,5 +60,7 @@ export DEVELOPER=`xcode-select --print-path`
 
 set -e
 
-./iSSH2-openssl.sh
-./iSSH2-libssh2.sh
+./iSSH2-openssl.sh || cleanupFail
+./iSSH2-libssh2.sh || cleanupFail
+
+cleanupAll
