@@ -1,7 +1,8 @@
 # iSSH2
 
-iSSH2 is a bash script to compile Libssh2 (and OpenSSL) for iOS and iPhone Simulator.
-The current version supports Libssh2 v1.4.3 and OpenSSL 1.0.1e and armv7, armv7s, arm64, i386, x86_64 architectures.
+iSSH2 is a bash script for compiling Libssh2 (and OpenSSL) for iOS and iPhone Simulator.
+
+The current version supports armv7, armv7s, arm64, i386, x86_64 architectures.
 
 - Libssh2: [Website](http://www.libssh2.org) | [Documentation](http://www.libssh2.org/docs.html) | [Changelog](http://www.libssh2.org/changes.html)
 - OpenSSL: [Website](http://www.openssl.org) | [Documentation](http://www.openssl.org/docs/) | [Changelog](http://www.openssl.org/news/)
@@ -12,16 +13,39 @@ The current version supports Libssh2 v1.4.3 and OpenSSL 1.0.1e and armv7, armv7s
 - Xcode Command Line Tools
 - iOS SDK
 
+#### Optional Requirements
+
+- git (required for automatically detection of latest version of Libssh2/OpenSSL)
+
 ## Tested with
 
-- Xcode 5.0
-- iOS SDK 7.0
+- Xcode: 5.1
+- iOS SDK: 7.1
+- Libssh2: 1.4.3
+- OpenSSL: 1.0.1g
+- Architectures: armv7, armv7s, arm64, i386, x86_64
 
 ## How to use
 
 1. Download the script
-2. Run iSSH2.sh in Terminal
+2. Run `iSSH2.sh` in Terminal
 3. Take a cup of coffee while waiting
+
+## Script help
+
+```
+Usage: iSSH2.sh [options]
+
+This script download and build OpenSSL and Libssh2 libraries.
+
+Options:
+  -a, --archs=[ARCHS]            build for [ARCHS] architectures
+  -i, --iphoneosMinVersion=VERS  set iPhoneOS minimum version to VERS
+  -s, --sdkVersion=VERS          use SDK version VERS
+  -l, --libssh2=VERS             download and build Libssh2 version VERS
+  -o, --openssl=VERS             download and build OpenSSL version VERS
+  -h, --help                     display this help and exit
+```
 
 ## License
 
