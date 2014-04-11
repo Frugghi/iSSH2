@@ -39,12 +39,15 @@ Usage: iSSH2.sh [options]
 This script download and build OpenSSL and Libssh2 libraries.
 
 Options:
-  -a, --archs=[ARCHS]            build for [ARCHS] architectures
-  -i, --iphoneosMinVersion=VERS  set iPhoneOS minimum version to VERS
-  -s, --sdkVersion=VERS          use SDK version VERS
-  -l, --libssh2=VERS             download and build Libssh2 version VERS
-  -o, --openssl=VERS             download and build OpenSSL version VERS
-  -h, --help                     display this help and exit
+  -a, --archs=[ARCHS]              build for [ARCHS] architectures
+                                   default is i386 x86_64 armv7 armv7s arm64
+  -i, --iphoneos-min-version=VERS  set iPhoneOS minimum version to VERS;
+                                   default is 6.0
+  -s, --sdk-version=VERS           use SDK version VERS
+  -l, --libssh2=VERS               download and build Libssh2 version VERS
+  -o, --openssl=VERS               download and build OpenSSL version VERS
+      --build-only-openssl         build OpenSSL and skip Libssh2
+  -h, --help                       display this help and exit
 ```
 
 ## License
