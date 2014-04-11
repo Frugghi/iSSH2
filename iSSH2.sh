@@ -51,7 +51,7 @@ getLibssh2Version () {
 
 getOpensslVersion () {
 	if type git >/dev/null 2>&1; then
-		LIBSSL_VERSION=`git ls-remote --tags git://git.openssl.org/openssl.git | egrep "OpenSSL(_[0-9]+[a-zA-Z]*)+$" | cut -f 2,3,4 -d _ | sort -t _ -r | head -n 1 | tr _ . `
+		LIBSSL_VERSION=`git ls-remote --tags git://git.openssl.org/openssl.git | egrep "OpenSSL(_[0-9])+[a-zA-Z]?$" | cut -f 2,3,4 -d _ | sort -t _ -r | head -n 1 | tr _ . `
 		LIBSSL_AUTO=true
 	else
 		echo "Install git to automatically get the latest OpenSSL version or use the --openssl argument"
@@ -67,12 +67,15 @@ usageHelp () {
 	echo "This script download and build OpenSSL and Libssh2 libraries."
 	echo
 	echo "Options:"
-	echo "  -a, --archs=[ARCHS]            build for [ARCHS] architectures"
-	echo "  -i, --iphoneosMinVersion=VERS  set iPhoneOS minimum version to VERS"
-	echo "  -s, --sdkVersion=VERS          use SDK version VERS"
-	echo "  -l, --libssh2=VERS             download and build Libssh2 version VERS"
-	echo "  -o, --openssl=VERS             download and build OpenSSL version VERS"
-	echo "  -h, --help                     display this help and exit"
+	echo "  -a, --archs=[ARCHS]              build for [ARCHS] architectures;"
+	echo "                                   default is $ARCHS"
+	echo "  -i, --iphoneos-min-version=VERS  set iPhoneOS minimum version to VERS;"
+	echo "                                   default is $IPHONEOS_MINVERSION"
+	echo "  -s, --sdk-version=VERS           use SDK version VERS"
+	echo "  -l, --libssh2=VERS               download and build Libssh2 version VERS"
+	echo "  -o, --openssl=VERS               download and build OpenSSL version VERS"
+	echo "      --build-only-openssl         build OpenSSL and skip Libssh2"
+	echo "  -h, --help                       display this help and exit"
 	echo
 	exit 1
 }
@@ -84,6 +87,9 @@ export LIBSSH_VERSION=
 export LIBSSL_VERSION=
 export IPHONEOS_MINVERSION="6.0"
 export ARCHS="i386 x86_64 armv7 armv7s arm64"
+
+BUILD_SSL=true
+BUILD_SSH=true
 
 while getopts ':a:i:l:o:s:h-' OPTION ; do
   case "$OPTION" in
@@ -101,8 +107,10 @@ while getopts ':a:i:l:o:s:h-' OPTION ; do
              --archs   ) ARCHS="$OPTARG"          ;;
              --openssl ) LIBSSL_VERSION="$OPTARG" ;;
              --libssh2 ) LIBSSH_VERSION="$OPTARG" ;;
-             --sdkVersion ) SDK_VERSION="$OPTARG" ;;
-             --iphoneosMinVersion) IPHONEOS_MINVERSION="$OPTARG" ;;
+             --sdk-version ) SDK_VERSION="$OPTARG" ;;
+             --iphoneos-min-version) IPHONEOS_MINVERSION="$OPTARG" ;;
+             --build-only-openssl) BUILD_SSH=false ;;
+             --only-print-env)     BUILD_SSL=false; BUILD_SSH=false ;;
              --help    ) usageHelp ;; 
              * )  echo "$SCRIPTNAME: Invalid option '$OPTION'" 
              	  echo "Try '$SCRIPTNAME --help' for more information."
@@ -172,7 +180,14 @@ echo
 
 set -e
 
-./iSSH2-openssl.sh || cleanupFail
-./iSSH2-libssh2.sh || cleanupFail
+if $BUILD_SSL; then
+	./iSSH2-openssl.sh || cleanupFail
+fi
 
-cleanupAll
+if $BUILD_SSH; then
+	./iSSH2-libssh2.sh || cleanupFail
+fi
+
+if $BUILD_SSL || $BUILD_SSH; then
+	cleanupAll
+fi
