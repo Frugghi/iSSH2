@@ -27,19 +27,24 @@ set -e
 
 mkdir -p "${LIBSSLDIR}"
 
-if [ ! -f "${LIBSSLDIR}/openssl-${LIBSSL_VERSION}.tar.gz" ];
+LIBSSL_TAR="openssl-${LIBSSL_VERSION}.tar.gz"
+
+if [ ! -f "${LIBSSLDIR}/${LIBSSL_TAR}" ];
 then
-	echo "Downloading openssl-${LIBSSL_VERSION}.tar.gz"
-	curl --progress-bar "http://www.openssl.org/source/openssl-${LIBSSL_VERSION}.tar.gz" > "${LIBSSLDIR}/openssl-${LIBSSL_VERSION}.tar.gz"
+	echo "Downloading ${LIBSSL_TAR}"
+	curl --progress-bar "http://www.openssl.org/source/${LIBSSL_TAR}" > "${LIBSSLDIR}/${LIBSSL_TAR}"
 else
-	echo "openssl-${LIBSSL_VERSION}.tar.gz already exists"
+	echo "${LIBSSL_TAR} already exists"
 fi
+
+LIBSSL_MD5=`md5 -q ${LIBSSLDIR}/${LIBSSL_TAR}`
+echo "MD5: ${LIBSSL_MD5}"
 
 mkdir -p "${LIBSSLDIR}/src/"
 
 set +e
-echo "Extracting openssl-${LIBSSL_VERSION}.tar.gz"
-tar -zxkf "${LIBSSLDIR}/openssl-${LIBSSL_VERSION}.tar.gz" -C "${LIBSSLDIR}/src" --strip-components 1 2>&-
+echo "Extracting ${LIBSSL_TAR}"
+tar -zxkf "${LIBSSLDIR}/${LIBSSL_TAR}" -C "${LIBSSLDIR}/src" --strip-components 1 2>&-
 set -e
 
 echo "Building OpenSSL ${LIBSSL_VERSION}:"

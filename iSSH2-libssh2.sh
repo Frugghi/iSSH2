@@ -27,19 +27,24 @@ set -e
 
 mkdir -p "${LIBSSHDIR}"
 
-if [ ! -f "${LIBSSHDIR}/libssh2-${LIBSSH_VERSION}.tar.gz" ];
+LIBSSH_TAR="libssh2-${LIBSSH_VERSION}.tar.gz"
+
+if [ ! -f "${LIBSSHDIR}/${LIBSSH_TAR}" ];
 then
-	echo "Downloading libssh2-${LIBSSH_VERSION}.tar.gz"
-	curl --progress-bar "http://www.libssh2.org/download/libssh2-${LIBSSH_VERSION}.tar.gz" > "${LIBSSHDIR}/libssh2-${LIBSSH_VERSION}.tar.gz"
+	echo "Downloading ${LIBSSH_TAR}"
+	curl --progress-bar "http://www.libssh2.org/download/${LIBSSH_TAR}" > "${LIBSSHDIR}/${LIBSSH_TAR}"
 else
-	echo "libssh2-${LIBSSH_VERSION}.tar.gz already exists"
+	echo "${LIBSSH_TAR} already exists"
 fi
+
+LIBSSH_MD5=`md5 -q ${LIBSSHDIR}/${LIBSSH_TAR}`
+echo "MD5: ${LIBSSH_MD5}"
 
 mkdir -p "${LIBSSHDIR}/src/"
 
 set +e
-echo "Extracting libssh2-${LIBSSH_VERSION}.tar.gz"
-tar -zxkf "${LIBSSHDIR}/libssh2-${LIBSSH_VERSION}.tar.gz" -C "${LIBSSHDIR}/src" --strip-components 1 2>&-
+echo "Extracting ${LIBSSH_TAR}"
+tar -zxkf "${LIBSSHDIR}/${LIBSSH_TAR}" -C "${LIBSSHDIR}/src" --strip-components 1 2>&-
 set -e
 
 echo "Building Libssh2 ${LIBSSH_VERSION}:"
