@@ -19,10 +19,10 @@ The current version supports armv7, armv7s, arm64, i386, x86_64 architectures.
 
 ## Tested with
 
-- Xcode: 5.1
-- iOS SDK: 7.1
-- Libssh2: 1.4.3
-- OpenSSL: 1.0.1g
+- Xcode: 6.3.2
+- iOS SDK: 8.3
+- Libssh2: 1.6.0
+- OpenSSL: 1.0.2c
 - Architectures: armv7, armv7s, arm64, i386, x86_64
 
 ## How to use
@@ -52,7 +52,7 @@ Options:
 
 ## License
 
-Copyright (c) 2013 Tommaso Madonia. All rights reserved.
+Copyright (c) 2015 Tommaso Madonia. All rights reserved.
 
 ```
 Permission is hereby granted, free of charge, to any person obtaining a copy
