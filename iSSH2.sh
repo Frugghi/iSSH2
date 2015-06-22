@@ -40,7 +40,7 @@ cleanupAll () {
 
 getLibssh2Version () {
 	if type git >/dev/null 2>&1; then
-		LIBSSH_VERSION=`git ls-remote --tags git://git.libssh2.org/libssh2.git | egrep "libssh2-*" | cut -f 2 -d - | sort -t . -r | head -n 1`
+		LIBSSH_VERSION=`git ls-remote --tags https://github.com/libssh2/libssh2.git | egrep "libssh2-[0-9]+(\.[0-9])*[a-zA-Z]?$" | cut -f 2 -d - | sort -t . -r | head -n 1`
 		LIBSSH_AUTO=true
 	else
 		echo "Install git to automatically get the latest Libssh2 version or use the --libssh2 argument"
