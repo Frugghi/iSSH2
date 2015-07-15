@@ -111,8 +111,8 @@ while getopts ':a:i:l:o:s:h-' OPTION ; do
              --iphoneos-min-version) IPHONEOS_MINVERSION="$OPTARG" ;;
              --build-only-openssl) BUILD_SSH=false ;;
              --only-print-env)     BUILD_SSL=false; BUILD_SSH=false ;;
-             --help    ) usageHelp ;; 
-             * )  echo "$SCRIPTNAME: Invalid option '$OPTION'" 
+             --help    ) usageHelp ;;
+             * )  echo "$SCRIPTNAME: Invalid option '$OPTION'"
              	  echo "Try '$SCRIPTNAME --help' for more information."
              	  exit 1 ;;
          esac
@@ -147,7 +147,7 @@ export CLANG=`xcrun --find clang`
 export DEVELOPER=`xcode-select --print-path`
 
 export BASEPATH="${PWD}"
-export TEMPPATH="/tmp/$SCRIPTNAME" 
+export TEMPPATH="${TMPDIR}/$SCRIPTNAME" 
 export LIBSSLDIR="${TEMPPATH}/openssl-${LIBSSL_VERSION}"
 export LIBSSHDIR="${TEMPPATH}/libssh2-${LIBSSH_VERSION}"
 
