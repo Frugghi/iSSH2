@@ -32,7 +32,7 @@ LIBSSL_TAR="openssl-${LIBSSL_VERSION}.tar.gz"
 if [ ! -f "${LIBSSLDIR}/${LIBSSL_TAR}" ];
 then
 	echo "Downloading ${LIBSSL_TAR}"
-	curl --progress-bar "http://www.openssl.org/source/${LIBSSL_TAR}" > "${LIBSSLDIR}/${LIBSSL_TAR}"
+	curl --progress-bar "https://www.openssl.org/source/${LIBSSL_TAR}" > "${LIBSSLDIR}/${LIBSSL_TAR}"
 else
 	echo "${LIBSSL_TAR} already exists"
 fi
@@ -59,7 +59,7 @@ do
 		PLATFORM="iPhoneOS"
 	fi
 
-	CONF="no-gost no-asm"
+	CONF="no-asm"
 
 	if [ "${ARCH}" == "arm64" -o "${ARCH}" == "x86_64" ];
 	then
@@ -81,12 +81,6 @@ do
 		continue
 	fi
 
-	rm -rf "${LIBSSLDIR}/tmp/"
-	mkdir -p "${LIBSSLDIR}/tmp/"
-	cp -R "${LIBSSLDIR}/src/" "${LIBSSLDIR}/tmp/"
-	
-	cd "${LIBSSLDIR}/tmp/"
-
 	rm -rf "${OPENSSLDIR}"
 	mkdir -p "${OPENSSLDIR}"
 
@@ -94,11 +88,11 @@ do
 
 	export DEVROOT="${DEVELOPER}/Platforms/${PLATFORM}.platform/Developer"
 	export SDKROOT="${DEVROOT}/SDKs/${PLATFORM}${SDK_VERSION}.sdk"
-	export CC="${CLANG} -arch ${ARCH}"
+	export CC="${CLANG}"
 
 	./Configure ${HOST} ${CONF} --openssldir="${OPENSSLDIR}" > "${LOG}" 2>&1
 
-	sed -ie "s!^CFLAG=!CFLAG=-isysroot ${SDKROOT} -miphoneos-version-min=${IPHONEOS_MINVERSION} !" "Makefile"
+	sed -ie "s!^CFLAG=!CFLAG=-isysroot ${SDKROOT} -arch ${ARCH} -miphoneos-version-min=${IPHONEOS_MINVERSION} !" "Makefile"
 
 	make >> "${LOG}" 2>&1
 	make all install_sw >> "${LOG}" 2>&1
