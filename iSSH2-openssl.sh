@@ -41,6 +41,7 @@ LIBSSL_MD5=`md5 -q ${LIBSSLDIR}/${LIBSSL_TAR}`
 echo "MD5: ${LIBSSL_MD5}"
 
 mkdir -p "${LIBSSLDIR}/src/"
+cd "${LIBSSLDIR}/src/"
 
 set +e
 echo "Extracting ${LIBSSL_TAR}"
@@ -92,7 +93,7 @@ do
 
 	./Configure ${HOST} ${CONF} --openssldir="${OPENSSLDIR}" > "${LOG}" 2>&1
 
-	sed -ie "s!^CFLAG=!CFLAG=-isysroot ${SDKROOT} -arch ${ARCH} -miphoneos-version-min=${IPHONEOS_MINVERSION} !" "Makefile"
+	sed -ie "s!^CFLAG=!CFLAG=-isysroot ${SDKROOT} -arch ${ARCH} -miphoneos-version-min=${IPHONEOS_MINVERSION} -fembed-bitcode !" "Makefile"
 
 	make >> "${LOG}" 2>&1
 	make all install_sw >> "${LOG}" 2>&1

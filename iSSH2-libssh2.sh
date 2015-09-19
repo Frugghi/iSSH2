@@ -41,6 +41,7 @@ LIBSSH_MD5=`md5 -q ${LIBSSHDIR}/${LIBSSH_TAR}`
 echo "MD5: ${LIBSSH_MD5}"
 
 mkdir -p "${LIBSSHDIR}/src/"
+cd "${LIBSSHDIR}/src/"
 
 set +e
 echo "Extracting ${LIBSSH_TAR}"
@@ -78,12 +79,6 @@ do
 		continue
 	fi
 
-	rm -rf "${LIBSSHDIR}/tmp/"
-	mkdir -p "${LIBSSHDIR}/tmp/"
-	cp -R "${LIBSSHDIR}/src/" "${LIBSSHDIR}/tmp/"
-	
-	cd "${LIBSSHDIR}/tmp/"
-
 	rm -rf "${LIBSSH2DIR}"
 	mkdir -p "${LIBSSH2DIR}"
 
@@ -93,7 +88,7 @@ do
 	export SDKROOT="${DEVROOT}/SDKs/${PLATFORM}${SDK_VERSION}.sdk"
 	export CC="${CLANG}"
 	export CPP="${CLANG} -E"
-	export CFLAGS="-arch ${ARCH} -pipe -no-cpp-precomp -isysroot ${SDKROOT} -miphoneos-version-min=${IPHONEOS_MINVERSION}"
+	export CFLAGS="-arch ${ARCH} -pipe -no-cpp-precomp -isysroot ${SDKROOT} -miphoneos-version-min=${IPHONEOS_MINVERSION} -fembed-bitcode"
 	export CPPFLAGS="-arch ${ARCH} -pipe -no-cpp-precomp -isysroot ${SDKROOT} -miphoneos-version-min=${IPHONEOS_MINVERSION}"
 
 	./Configure --host=${HOST} --prefix="${LIBSSH2DIR}" --with-openssl --with-libssl-prefix="${OPENSSLDIR}" --disable-shared --enable-static  >> "${LOG}" 2>&1

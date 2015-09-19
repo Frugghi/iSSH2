@@ -85,7 +85,7 @@ usageHelp () {
 export SDK_VERSION=
 export LIBSSH_VERSION=
 export LIBSSL_VERSION=
-export IPHONEOS_MINVERSION="6.0"
+export IPHONEOS_MINVERSION="7.0"
 export ARCHS="i386 x86_64 armv7 armv7s arm64"
 
 BUILD_SSL=true
