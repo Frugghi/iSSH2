@@ -19,10 +19,10 @@ The current version supports armv7, armv7s, arm64, i386, x86_64 architectures.
 
 ## Tested with
 
-- Xcode: 6.3.2
-- iOS SDK: 8.3
+- Xcode: 7.1.1
+- iOS SDK: 9.1
 - Libssh2: 1.6.0
-- OpenSSL: 1.0.2c
+- OpenSSL: 1.0.2d
 - Architectures: armv7, armv7s, arm64, i386, x86_64
 
 ## How to use
@@ -47,6 +47,7 @@ Options:
   -l, --libssh2=VERS               download and build Libssh2 version VERS
   -o, --openssl=VERS               download and build OpenSSL version VERS
       --build-only-openssl         build OpenSSL and skip Libssh2
+      --no-clean                   do not clean build folder
   -h, --help                       display this help and exit
 ```
 
