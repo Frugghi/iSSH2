@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
                                    #########
 #################################### iSSH2 #####################################
 #                                  #########                                   #
@@ -25,89 +25,78 @@
 
 set -e
 
-mkdir -p "${LIBSSHDIR}"
+source ./iSSH2-functions
 
-LIBSSH_TAR="libssh2-${LIBSSH_VERSION}.tar.gz"
+mkdir -p "$LIBSSHDIR"
 
-if [ ! -f "${LIBSSHDIR}/${LIBSSH_TAR}" ];
-then
-	echo "Downloading ${LIBSSH_TAR}"
-	curl --progress-bar "http://www.libssh2.org/download/${LIBSSH_TAR}" > "${LIBSSHDIR}/${LIBSSH_TAR}"
-else
-	echo "${LIBSSH_TAR} already exists"
-fi
+LIBSSH_TAR="libssh2-$LIBSSH_VERSION.tar.gz"
 
-LIBSSH_MD5=`md5 -q ${LIBSSHDIR}/${LIBSSH_TAR}`
-echo "MD5: ${LIBSSH_MD5}"
+downloadFile "http://www.libssh2.org/download/$LIBSSH_TAR" "$LIBSSHDIR/$LIBSSH_TAR"
 
-mkdir -p "${LIBSSHDIR}/src/"
-cd "${LIBSSHDIR}/src/"
+LIBSSHSRC="$LIBSSHDIR/src/"
+mkdir -p "$LIBSSHSRC"
 
 set +e
-echo "Extracting ${LIBSSH_TAR}"
-tar -zxkf "${LIBSSHDIR}/${LIBSSH_TAR}" -C "${LIBSSHDIR}/src" --strip-components 1 2>&-
+echo "Extracting $LIBSSH_TAR"
+tar -zxkf "$LIBSSHDIR/$LIBSSH_TAR" -C "$LIBSSHDIR/src" --strip-components 1 2>&-
 set -e
 
-echo "Building Libssh2 ${LIBSSH_VERSION}:"
+echo "Building Libssh2 $LIBSSH_VERSION:"
 
-for ARCH in ${ARCHS}
+for ARCH in $ARCHS
 do
-	if [ "${ARCH}" == "i386" -o "${ARCH}" == "x86_64" ];
+	if [ "$ARCH" == "i386" -o "$ARCH" == "x86_64" ];
 	then
 		PLATFORM="iPhoneSimulator"
 	else
-		PLATFORM="iPhoneOS"	
+		PLATFORM="iPhoneOS"
 	fi
 
-	if [ "${ARCH}" == "arm64" ];
+	OPENSSLDIR="$BASEPATH/openssl/"
+	LIBSSH2DIR="$LIBSSHDIR/$PLATFORM$SDK_VERSION-$ARCH"
+	LIPO_SSH2="$LIPO_SSH2 $LIBSSH2DIR/lib/libssh2.a"
+
+	(
+	if [ -f "$LIBSSH2DIR/lib/libssh2.a" ];
+	then
+		echo "libssh2.a for $ARCH already exists."
+		exit 0
+	fi
+
+	rm -rf "$LIBSSH2DIR"
+	cp -R "$LIBSSHSRC"  "$LIBSSH2DIR"
+	cd "$LIBSSH2DIR"
+
+	LOG="$LIBSSH2DIR/build-libssh2.log"
+	touch $LOG
+
+	if [ "$ARCH" == "arm64" ];
 	then
 		HOST="aarch64-apple-darwin"
 	else
-		HOST="${ARCH}-apple-darwin"
+		HOST="$ARCH-apple-darwin"
 	fi
 
-	OPENSSLDIR="${LIBSSLDIR}/${PLATFORM}${SDK_VERSION}-${ARCH}"
-	LIBSSH2DIR="${LIBSSHDIR}/${PLATFORM}${SDK_VERSION}-${ARCH}"
-	
-	LIPO_SSH2="${LIPO_SSH2} ${LIBSSH2DIR}/lib/libssh2.a"
+	export DEVROOT="$DEVELOPER/Platforms/$PLATFORM.platform/Developer"
+	export SDKROOT="$DEVROOT/SDKs/$PLATFORM$SDK_VERSION.sdk"
+	export CC="$CLANG"
+	export CPP="$CLANG -E"
+	export CFLAGS="-arch $ARCH -pipe -no-cpp-precomp -isysroot $SDKROOT -miphoneos-version-min=$IPHONEOS_MINVERSION -fembed-bitcode"
+	export CPPFLAGS="-arch $ARCH -pipe -no-cpp-precomp -isysroot $SDKROOT -miphoneos-version-min=$IPHONEOS_MINVERSION"
 
-	echo "Building for ${PLATFORM} ${ARCH}, please wait..."
+	./Configure --host=$HOST --prefix="$LIBSSH2DIR" --with-openssl --with-libssl-prefix="$OPENSSLDIR" --disable-shared --enable-static  >> "$LOG" 2>&1
 
-	if [ -f "${LIBSSH2DIR}/lib/libssh2.a" ];
-	then
-		echo "libssh2.a for ${ARCH} already exists."
-		continue
-	fi
+	make >> "$LOG" 2>&1
+	make install >> "$LOG" 2>&1
 
-	rm -rf "${LIBSSH2DIR}"
-	mkdir -p "${LIBSSH2DIR}"
-
-	LOG="${LIBSSH2DIR}/build-libssh2.log"
-
-	export DEVROOT="${DEVELOPER}/Platforms/${PLATFORM}.platform/Developer"
-	export SDKROOT="${DEVROOT}/SDKs/${PLATFORM}${SDK_VERSION}.sdk"
-	export CC="${CLANG}"
-	export CPP="${CLANG} -E"
-	export CFLAGS="-arch ${ARCH} -pipe -no-cpp-precomp -isysroot ${SDKROOT} -miphoneos-version-min=${IPHONEOS_MINVERSION} -fembed-bitcode"
-	export CPPFLAGS="-arch ${ARCH} -pipe -no-cpp-precomp -isysroot ${SDKROOT} -miphoneos-version-min=${IPHONEOS_MINVERSION}"
-
-	./Configure --host=${HOST} --prefix="${LIBSSH2DIR}" --with-openssl --with-libssl-prefix="${OPENSSLDIR}" --disable-shared --enable-static  >> "${LOG}" 2>&1
-
-	make >> "${LOG}" 2>&1
-	make install >> "${LOG}" 2>&1
-	make clean >> "${LOG}" 2>&1
-	
-	echo "Building done."
+	echo "- $PLATFORM $ARCH done!"
+	)&
 done
 
-echo "Building fat library..."
-rm -rf "${BASEPATH}/libssh2/lib/"
-mkdir -p "${BASEPATH}/libssh2/lib/"
-lipo -create ${LIPO_SSH2} -output "${BASEPATH}/libssh2/lib/libssh2.a"
+wait
 
-echo "Copying headers..."
-rm -rf "${BASEPATH}/libssh2/include/"
-mkdir -p "${BASEPATH}/libssh2/include/"
-cp -RL "${LIBSSHDIR}/src/include/" "${BASEPATH}/libssh2/include/"
+lipoFatLibrary "$LIPO_SSH2" "$BASEPATH/libssh2/lib/libssh2.a"
+
+importHeaders "$LIBSSHSRC/include/" "$BASEPATH/libssh2/include"
 
 echo "Building done."

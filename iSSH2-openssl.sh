@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
                                    #########
 #################################### iSSH2 #####################################
 #                                  #########                                   #
@@ -25,92 +25,85 @@
 
 set -e
 
-mkdir -p "${LIBSSLDIR}"
+source ./iSSH2-functions
 
-LIBSSL_TAR="openssl-${LIBSSL_VERSION}.tar.gz"
+mkdir -p "$LIBSSLDIR"
 
-if [ ! -f "${LIBSSLDIR}/${LIBSSL_TAR}" ];
-then
-	echo "Downloading ${LIBSSL_TAR}"
-	curl --progress-bar "https://www.openssl.org/source/${LIBSSL_TAR}" > "${LIBSSLDIR}/${LIBSSL_TAR}"
-else
-	echo "${LIBSSL_TAR} already exists"
-fi
+LIBSSL_TAR="openssl-$LIBSSL_VERSION.tar.gz"
 
-LIBSSL_MD5=`md5 -q ${LIBSSLDIR}/${LIBSSL_TAR}`
-echo "MD5: ${LIBSSL_MD5}"
+downloadFile "https://www.openssl.org/source/$LIBSSL_TAR" "$LIBSSLDIR/$LIBSSL_TAR"
 
-mkdir -p "${LIBSSLDIR}/src/"
-cd "${LIBSSLDIR}/src/"
+LIBSSLSRC="$LIBSSLDIR/src/"
+mkdir -p "$LIBSSLSRC"
 
 set +e
-echo "Extracting ${LIBSSL_TAR}"
-tar -zxkf "${LIBSSLDIR}/${LIBSSL_TAR}" -C "${LIBSSLDIR}/src" --strip-components 1 2>&-
+echo "Extracting $LIBSSL_TAR"
+tar -zxkf "$LIBSSLDIR/$LIBSSL_TAR" -C "$LIBSSLSRC" --strip-components 1 2>&-
 set -e
 
-echo "Building OpenSSL ${LIBSSL_VERSION}:"
+echo "Building OpenSSL $LIBSSL_VERSION, please wait..."
 
-for ARCH in ${ARCHS}
+for ARCH in $ARCHS
 do
-	if [ "${ARCH}" == "i386" -o "${ARCH}" == "x86_64" ];
+	if [ "$ARCH" == "i386" -o "$ARCH" == "x86_64" ];
 	then
 		PLATFORM="iPhoneSimulator"
 	else
-		sed -ie "s!static volatile sig_atomic_t intr_signal;!static volatile intr_signal;!" "${LIBSSLDIR}/src/crypto/ui/ui_openssl.c"
 		PLATFORM="iPhoneOS"
 	fi
 
-	CONF="no-asm"
+	OPENSSLDIR="$LIBSSLDIR/$PLATFORM$SDK_VERSION-$ARCH"
+	LIPO_LIBSSL="$LIPO_LIBSSL $OPENSSLDIR/libssl.a"
+	LIPO_LIBCRYPTO="$LIPO_LIBCRYPTO $OPENSSLDIR/libcrypto.a"
 
-	if [ "${ARCH}" == "arm64" -o "${ARCH}" == "x86_64" ];
+	(
+	if [ -f "$OPENSSLDIR/libssl.a" -a -f "$OPENSSLDIR/libcrypto.a" ];
+	then
+		echo "libssl.a and libcrypto.a for $ARCH already exist."
+		exit 0
+	fi
+
+	rm -rf "$OPENSSLDIR"
+	cp -R "$LIBSSLSRC"  "$OPENSSLDIR"
+	cd "$OPENSSLDIR"
+
+	LOG="$OPENSSLDIR/build-openssl.log"
+	touch $LOG
+
+	CONF="no-asm no-hw no-engine"
+
+	if [ "$ARCH" == "arm64" -o "$ARCH" == "x86_64" ];
 	then
 		HOST="BSD-generic64"
-		CONF="${CONF} enable-ec_nistp_64_gcc_128"
+		CONF="$CONF enable-ec_nistp_64_gcc_128"
 	else
 		HOST="BSD-generic32"
 	fi
 
-	OPENSSLDIR="${LIBSSLDIR}/${PLATFORM}${SDK_VERSION}-${ARCH}"
-
-	LIPO_LIBSSL="${LIPO_LIBSSL} ${OPENSSLDIR}/lib/libssl.a"
-	LIPO_LIBCRYPTO="${LIPO_LIBCRYPTO} ${OPENSSLDIR}/lib/libcrypto.a"
-
-	echo "Building for ${PLATFORM} ${ARCH}, please wait..."
-	if [ -f "${OPENSSLDIR}/lib/libssl.a" -a -f "${OPENSSLDIR}/lib/libcrypto.a" ];
+	if [ "$PLATFORM" == "iPhoneOS" ];
 	then
-		echo "libssl.a and libcrypto.a for ${ARCH} already exist."
-		continue
+		sed -ie "s!static volatile sig_atomic_t intr_signal;!static volatile intr_signal;!" "$OPENSSLDIR/crypto/ui/ui_openssl.c"
 	fi
 
-	rm -rf "${OPENSSLDIR}"
-	mkdir -p "${OPENSSLDIR}"
+	export DEVROOT="$DEVELOPER/Platforms/$PLATFORM.platform/Developer"
+	export SDKROOT="$DEVROOT/SDKs/$PLATFORM$SDK_VERSION.sdk"
+	export CC="$CLANG"
 
-	LOG="${OPENSSLDIR}/build-openssl.log"
+	./Configure $HOST $CONF >> "$LOG" 2>&1
 
-	export DEVROOT="${DEVELOPER}/Platforms/${PLATFORM}.platform/Developer"
-	export SDKROOT="${DEVROOT}/SDKs/${PLATFORM}${SDK_VERSION}.sdk"
-	export CC="${CLANG}"
+	sed -ie "s!^CFLAG=!CFLAG=-isysroot $SDKROOT -arch $ARCH -miphoneos-version-min=$IPHONEOS_MINVERSION -fembed-bitcode !" "Makefile"
 
-	./Configure ${HOST} ${CONF} --openssldir="${OPENSSLDIR}" > "${LOG}" 2>&1
+	make build_libs >> "$LOG" 2>&1
 
-	sed -ie "s!^CFLAG=!CFLAG=-isysroot ${SDKROOT} -arch ${ARCH} -miphoneos-version-min=${IPHONEOS_MINVERSION} -fembed-bitcode !" "Makefile"
-
-	make >> "${LOG}" 2>&1
-	make all install_sw >> "${LOG}" 2>&1
-	make clean >> "${LOG}" 2>&1
-
-	echo "Building done."
+	echo "- $PLATFORM $ARCH done!"
+	) &
 done
 
-echo "Building fat library..."
-rm -rf "${BASEPATH}/openssl/lib/"
-mkdir -p "${BASEPATH}/openssl/lib/"
-lipo -create ${LIPO_LIBSSL}    -output "${BASEPATH}/openssl/lib/libssl.a"
-lipo -create ${LIPO_LIBCRYPTO} -output "${BASEPATH}/openssl/lib/libcrypto.a"
+wait
 
-echo "Copying headers..."
-rm -rf "${BASEPATH}/openssl/include/"
-mkdir -p "${BASEPATH}/openssl/include/"
-cp -RL "${LIBSSLDIR}/src/include/" "${BASEPATH}/openssl/include/"
+lipoFatLibrary "$LIPO_LIBSSL" "$BASEPATH/openssl/lib/libssl.a"
+lipoFatLibrary "$LIPO_LIBCRYPTO" "$BASEPATH/openssl/lib/libcrypto.a"
+
+importHeaders "$LIBSSLSRC/include/" "$BASEPATH/openssl/include"
 
 echo "Building done."

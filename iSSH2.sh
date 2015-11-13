@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
                                    #########
 #################################### iSSH2 #####################################
 #                                  #########                                   #
@@ -28,14 +28,18 @@ export SCRIPTNAME="iSSH2"
 #Functions
 
 cleanupFail () {
-	echo "Build failed, cleaning up temporary files..."
-	rm -rf "${LIBSSLDIR}/src/" "${LIBSSLDIR}/tmp/" "${LIBSSHDIR}/src/" "${LIBSSHDIR}/tmp/"
-	exit 1
+	if $1; then
+		echo "Build failed, cleaning up temporary files..."
+		rm -rf "$LIBSSLDIR/src/" "$LIBSSLDIR/tmp/" "$LIBSSHDIR/src/" "$LIBSSHDIR/tmp/"
+		exit 1
+	fi
 }
 
 cleanupAll () {
-	echo "Cleaning up temporary files..."
-	rm -rf "${TEMPPATH}"
+	if $1; then
+		echo "Cleaning up temporary files..."
+		rm -rf "$TEMPPATH"
+	fi
 }
 
 getLibssh2Version () {
@@ -75,6 +79,7 @@ usageHelp () {
 	echo "  -l, --libssh2=VERS               download and build Libssh2 version VERS"
 	echo "  -o, --openssl=VERS               download and build OpenSSL version VERS"
 	echo "      --build-only-openssl         build OpenSSL and skip Libssh2"
+	echo "      --no-clean                   do not clean build folder"
 	echo "  -h, --help                       display this help and exit"
 	echo
 	exit 1
@@ -90,6 +95,7 @@ export ARCHS="i386 x86_64 armv7 armv7s arm64"
 
 BUILD_SSL=true
 BUILD_SSH=true
+CLEAN_BUILD=true
 
 while getopts ':a:i:l:o:s:h-' OPTION ; do
   case "$OPTION" in
@@ -111,6 +117,7 @@ while getopts ':a:i:l:o:s:h-' OPTION ; do
              --iphoneos-min-version) IPHONEOS_MINVERSION="$OPTARG" ;;
              --build-only-openssl) BUILD_SSH=false ;;
              --only-print-env)     BUILD_SSL=false; BUILD_SSH=false ;;
+						 --no-clean) CLEAN_BUILD=false ;;
              --help    ) usageHelp ;;
              * )  echo "$SCRIPTNAME: Invalid option '$OPTION'"
              	  echo "Try '$SCRIPTNAME --help' for more information."
@@ -146,10 +153,10 @@ fi
 export CLANG=`xcrun --find clang`
 export DEVELOPER=`xcode-select --print-path`
 
-export BASEPATH="${PWD}"
-export TEMPPATH="${TMPDIR}/$SCRIPTNAME" 
-export LIBSSLDIR="${TEMPPATH}/openssl-${LIBSSL_VERSION}"
-export LIBSSHDIR="${TEMPPATH}/libssh2-${LIBSSH_VERSION}"
+export BASEPATH="$PWD"
+export TEMPPATH="$TMPDIR/$SCRIPTNAME"
+export LIBSSLDIR="$TEMPPATH/openssl-$LIBSSL_VERSION"
+export LIBSSHDIR="$TEMPPATH/libssh2-$LIBSSH_VERSION"
 
 #Env
 
@@ -181,13 +188,13 @@ echo
 set -e
 
 if $BUILD_SSL; then
-	./iSSH2-openssl.sh || cleanupFail
+	./iSSH2-openssl.sh || cleanupFail $CLEAN_BUILD
 fi
 
 if $BUILD_SSH; then
-	./iSSH2-libssh2.sh || cleanupFail
+	./iSSH2-libssh2.sh || cleanupFail $CLEAN_BUILD
 fi
 
 if $BUILD_SSL || $BUILD_SSH; then
-	cleanupAll
+	cleanupAll $CLEAN_BUILD
 fi
