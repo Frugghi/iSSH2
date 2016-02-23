@@ -1,6 +1,6 @@
 # iSSH2
 
-iSSH2 is a bash script for compiling Libssh2 (and OpenSSL) for iOS and iPhone Simulator.
+iSSH2 is a bash script for compiling Libssh2 (and OpenSSL) for iOS, iPhone Simulator and OSX.
 
 The current version supports armv7, armv7s, arm64, i386, x86_64 architectures.
 
@@ -11,7 +11,7 @@ The current version supports armv7, armv7s, arm64, i386, x86_64 architectures.
 
 - Xcode
 - Xcode Command Line Tools
-- iOS SDK
+- iOS SDK or MacOS SDK
 
 #### Optional Requirements
 
@@ -19,10 +19,11 @@ The current version supports armv7, armv7s, arm64, i386, x86_64 architectures.
 
 ## Tested with
 
-- Xcode: 7.1.1
-- iOS SDK: 9.1
+- Xcode: 7.2.1
+- iOS SDK: 9.2
+- MacOS SDK: 10.11
 - Libssh2: 1.6.0
-- OpenSSL: 1.0.2d
+- OpenSSL: 1.0.2f
 - Architectures: armv7, armv7s, arm64, i386, x86_64
 
 ## How to use
@@ -39,21 +40,21 @@ Usage: iSSH2.sh [options]
 This script download and build OpenSSL and Libssh2 libraries.
 
 Options:
-  -a, --archs=[ARCHS]              build for [ARCHS] architectures
-                                   default is i386 x86_64 armv7 armv7s arm64
-  -i, --iphoneos-min-version=VERS  set iPhoneOS minimum version to VERS;
-                                   default is 6.0
-  -s, --sdk-version=VERS           use SDK version VERS
-  -l, --libssh2=VERS               download and build Libssh2 version VERS
-  -o, --openssl=VERS               download and build OpenSSL version VERS
-      --build-only-openssl         build OpenSSL and skip Libssh2
-      --no-clean                   do not clean build folder
-  -h, --help                       display this help and exit
+  -a, --archs=[ARCHS]       build for [ARCHS] architectures
+  -v, --min-version=VERS    set iPhone or Mac OS minimum version to VERS
+  -s, --sdk-version=VERS    use SDK version VERS
+  -l, --libssh2=VERS        download and build Libssh2 version VERS
+  -o, --openssl=VERS        download and build OpenSSL version VERS
+      --build-only-openssl  build OpenSSL and skip Libssh2
+      --no-clean            do not clean build folder
+      --osx                 build only for OSX
+      --no-bitcode          don't embed bitcode
+  -h, --help                display this help and exit
 ```
 
 ## License
 
-Copyright (c) 2015 Tommaso Madonia. All rights reserved.
+Copyright (c) 2016 Tommaso Madonia. All rights reserved.
 
 ```
 Permission is hereby granted, free of charge, to any person obtaining a copy

@@ -23,9 +23,9 @@
 # THE SOFTWARE.                                                                #
 ################################################################################
 
-set -e
+source "$BASEPATH/iSSH2-commons"
 
-source ./iSSH2-functions
+set -e
 
 mkdir -p "$LIBSSLDIR"
 
@@ -45,12 +45,18 @@ echo "Building OpenSSL $LIBSSL_VERSION, please wait..."
 
 for ARCH in $ARCHS
 do
-	if [ "$ARCH" == "i386" -o "$ARCH" == "x86_64" ];
-	then
-		PLATFORM="iPhoneSimulator"
-	else
-		PLATFORM="iPhoneOS"
-	fi
+	if [ "$SDK_PLATFORM" == "macosx" ]; then
+		PLATFORM="MacOSX"
+		CONF=""
+  else
+		CONF="no-asm no-hw no-engine"
+		if [ "$ARCH" == "i386" -o "$ARCH" == "x86_64" ];
+		then
+			PLATFORM="iPhoneSimulator"
+		else
+			PLATFORM="iPhoneOS"
+		fi
+  fi
 
 	OPENSSLDIR="$LIBSSLDIR/$PLATFORM$SDK_VERSION-$ARCH"
 	LIPO_LIBSSL="$LIPO_LIBSSL $OPENSSLDIR/libssl.a"
@@ -70,14 +76,21 @@ do
 	LOG="$OPENSSLDIR/build-openssl.log"
 	touch $LOG
 
-	CONF="no-asm no-hw no-engine"
-
-	if [ "$ARCH" == "arm64" -o "$ARCH" == "x86_64" ];
-	then
-		HOST="BSD-generic64"
-		CONF="$CONF enable-ec_nistp_64_gcc_128"
+	if [ "$SDK_PLATFORM" == "macosx" ]; then
+		if [ "$ARCH" == "x86_64" ];
+		then
+			HOST="darwin64-x86_64-cc"
+		else
+			HOST="darwin-$ARCH-cc"
+		fi
 	else
-		HOST="BSD-generic32"
+		if [ "$ARCH" == "arm64" -o "$ARCH" == "x86_64" ];
+		then
+			HOST="BSD-generic64"
+			CONF="$CONF enable-ec_nistp_64_gcc_128"
+		else
+			HOST="BSD-generic32"
+		fi
 	fi
 
 	if [ "$PLATFORM" == "iPhoneOS" ];
@@ -91,7 +104,7 @@ do
 
 	./Configure $HOST $CONF >> "$LOG" 2>&1
 
-	sed -ie "s!^CFLAG=!CFLAG=-isysroot $SDKROOT -arch $ARCH -miphoneos-version-min=$IPHONEOS_MINVERSION -fembed-bitcode !" "Makefile"
+	sed -ie "s!^CFLAG=!CFLAG=-isysroot $SDKROOT -arch $ARCH -m$SDK_PLATFORM-version-min=$MIN_VERSION $EMBED_BITCODE !" "Makefile"
 
 	make build_libs >> "$LOG" 2>&1
 
@@ -104,6 +117,6 @@ wait
 lipoFatLibrary "$LIPO_LIBSSL" "$BASEPATH/openssl/lib/libssl.a"
 lipoFatLibrary "$LIPO_LIBCRYPTO" "$BASEPATH/openssl/lib/libcrypto.a"
 
-importHeaders "$LIBSSLSRC/include/" "$BASEPATH/openssl/include"
+importHeaders "$OPENSSLDIR/include/" "$BASEPATH/openssl/include"
 
 echo "Building done."

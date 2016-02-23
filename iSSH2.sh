@@ -71,16 +71,16 @@ usageHelp () {
 	echo "This script download and build OpenSSL and Libssh2 libraries."
 	echo
 	echo "Options:"
-	echo "  -a, --archs=[ARCHS]              build for [ARCHS] architectures;"
-	echo "                                   default is $ARCHS"
-	echo "  -i, --iphoneos-min-version=VERS  set iPhoneOS minimum version to VERS;"
-	echo "                                   default is $IPHONEOS_MINVERSION"
-	echo "  -s, --sdk-version=VERS           use SDK version VERS"
-	echo "  -l, --libssh2=VERS               download and build Libssh2 version VERS"
-	echo "  -o, --openssl=VERS               download and build OpenSSL version VERS"
-	echo "      --build-only-openssl         build OpenSSL and skip Libssh2"
-	echo "      --no-clean                   do not clean build folder"
-	echo "  -h, --help                       display this help and exit"
+	echo "  -a, --archs=[ARCHS]       build for [ARCHS] architectures"
+	echo "  -v, --min-version=VERS    set iPhone or Mac OS minimum version to VERS"
+	echo "  -s, --sdk-version=VERS    use SDK version VERS"
+	echo "  -l, --libssh2=VERS        download and build Libssh2 version VERS"
+	echo "  -o, --openssl=VERS        download and build OpenSSL version VERS"
+	echo "      --build-only-openssl  build OpenSSL and skip Libssh2"
+	echo "      --no-clean            do not clean build folder"
+	echo "      --osx                 build only for OSX"
+	echo "      --no-bitcode          don't embed bitcode"
+	echo "  -h, --help                display this help and exit"
 	echo
 	exit 1
 }
@@ -90,49 +90,73 @@ usageHelp () {
 export SDK_VERSION=
 export LIBSSH_VERSION=
 export LIBSSL_VERSION=
-export IPHONEOS_MINVERSION="7.0"
-export ARCHS="i386 x86_64 armv7 armv7s arm64"
+export MIN_VERSION=
+export ARCHS=
+export SDK_PLATFORM=
+export EMBED_BITCODE="-fembed-bitcode"
 
+OSX_ARCHS="i386 x86_64"
+IOS_ARCHS="armv7 armv7s arm64"
+
+BUILD_OSX=false
 BUILD_SSL=true
 BUILD_SSH=true
 CLEAN_BUILD=true
 
-while getopts ':a:i:l:o:s:h-' OPTION ; do
+while getopts ':a:l:o:v:s:h-' OPTION ; do
   case "$OPTION" in
-    a  ) ARCHS="$OPTARG" ;;
-    i  ) IPHONEOS_MINVERSION="$OPTARG" ;;
-    s  ) SDK_VERSION="$OPTARG" ;;
-    l  ) LIBSSH_VERSION="$OPTARG" ;;
-    o  ) LIBSSL_VERSION="$OPTARG" ;;
-    h  ) usageHelp ;;
-    -  ) [ $OPTIND -ge 1 ] && optind=$(expr $OPTIND - 1 ) || optind=$OPTIND
-         eval OPTION="\$$optind"
-         OPTARG=$(echo $OPTION | cut -d'=' -f2)
-         OPTION=$(echo $OPTION | cut -d'=' -f1)
-         case $OPTION in
-             --archs   ) ARCHS="$OPTARG"          ;;
-             --openssl ) LIBSSL_VERSION="$OPTARG" ;;
-             --libssh2 ) LIBSSH_VERSION="$OPTARG" ;;
-             --sdk-version ) SDK_VERSION="$OPTARG" ;;
-             --iphoneos-min-version) IPHONEOS_MINVERSION="$OPTARG" ;;
+    a) ARCHS="$OPTARG" ;;
+    v) MIN_VERSION="$OPTARG" ;;
+    s) SDK_VERSION="$OPTARG" ;;
+    l) LIBSSH_VERSION="$OPTARG" ;;
+    o) LIBSSL_VERSION="$OPTARG" ;;
+    h) usageHelp ;;
+    -) [ $OPTIND -ge 1 ] && optind=$(expr $OPTIND - 1 ) || optind=$OPTIND
+         eval FULL_OPTION="\$$optind"
+         OPTARG=$(echo $FULL_OPTION | cut -d'=' -f2)
+         OPTION=$(echo $FULL_OPTION | cut -d'=' -f1)
+         case "$OPTION" in
+             --archs) ARCHS="$OPTARG" ;;
+             --openssl) LIBSSL_VERSION="$OPTARG" ;;
+             --libssh2) LIBSSH_VERSION="$OPTARG" ;;
+             --sdk-version) SDK_VERSION="$OPTARG" ;;
+             --min-version) MIN_VERSION="$OPTARG" ;;
              --build-only-openssl) BUILD_SSH=false ;;
-             --only-print-env)     BUILD_SSL=false; BUILD_SSH=false ;;
+             --only-print-env) BUILD_SSL=false; BUILD_SSH=false ;;
+						 --osx) BUILD_OSX=true ;;
+						 --no-bitcode) EMBED_BITCODE="" ;;
 						 --no-clean) CLEAN_BUILD=false ;;
-             --help    ) usageHelp ;;
-             * )  echo "$SCRIPTNAME: Invalid option '$OPTION'"
-             	  echo "Try '$SCRIPTNAME --help' for more information."
-             	  exit 1 ;;
+             --help) usageHelp ;;
+             * ) echo "$SCRIPTNAME: Invalid option '$FULL_OPTION'"
+             	   echo "Try '$SCRIPTNAME --help' for more information."
+             	   exit 1 ;;
          esac
        OPTIND=1
        shift
       ;;
-    \?  ) echo "$SCRIPTNAME: Invalid option -- $OPTION"
+    \?) echo "$SCRIPTNAME: Invalid option -- $OPTION"
     	  echo "Try '$SCRIPTNAME --help' for more information."
     	  exit 1 ;;
   esac
 done
 
 echo "Initializing..."
+
+if [ -z "$MIN_VERSION" ]; then
+	if [ $BUILD_OSX = true ]; then
+		MIN_VERSION="10.10"
+	else
+		MIN_VERSION="8.0"
+	fi
+fi
+
+if [ -z "$ARCHS" ]; then
+	if [ $BUILD_OSX = true ]; then
+		ARCHS="$OSX_ARCHS"
+	else
+		ARCHS="$IOS_ARCHS $OSX_ARCHS"
+	fi
+fi
 
 LIBSSH_AUTO=false
 if [ -z "$LIBSSH_VERSION" ]; then
@@ -144,16 +168,23 @@ if [ -z "$LIBSSL_VERSION" ]; then
 	getOpensslVersion
 fi
 
+if [ $BUILD_OSX = true ]; then
+  SDK_PLATFORM="macosx"
+else
+	SDK_PLATFORM="iphoneos"
+fi
+
 SDK_AUTO=false
 if [ -z "$SDK_VERSION" ]; then
- 	SDK_VERSION=`xcrun --sdk iphoneos --show-sdk-version`
+ 	SDK_VERSION=`xcrun --sdk $SDK_PLATFORM --show-sdk-version`
  	SDK_AUTO=true
 fi
 
 export CLANG=`xcrun --find clang`
+export GCC=`xcrun --find gcc`
 export DEVELOPER=`xcode-select --print-path`
 
-export BASEPATH="$PWD"
+export BASEPATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 export TEMPPATH="$TMPDIR/$SCRIPTNAME"
 export LIBSSLDIR="$TEMPPATH/openssl-$LIBSSL_VERSION"
 export LIBSSHDIR="$TEMPPATH/libssh2-$LIBSSH_VERSION"
@@ -161,40 +192,40 @@ export LIBSSHDIR="$TEMPPATH/libssh2-$LIBSSH_VERSION"
 #Env
 
 echo
-if $LIBSSH_AUTO; then
+if [ $LIBSSH_AUTO = true ]; then
 	echo "Libssh2 version: $LIBSSH_VERSION (Automatically detected)"
 else
 	echo "Libssh2 version: $LIBSSH_VERSION"
 fi
 
-if $LIBSSL_AUTO; then
+if [ $LIBSSL_AUTO = true ]; then
 	echo "OpenSSL version: $LIBSSL_VERSION (Automatically detected)"
 else
 	echo "OpenSSL version: $LIBSSL_VERSION"
 fi
 
-if $SDK_AUTO; then
+if [ $SDK_AUTO = true ]; then
 	echo "SDK version: $SDK_VERSION (Automatically detected)"
 else
 	echo "SDK version: $SDK_VERSION"
 fi
 
 echo "Architectures: $ARCHS"
-echo "iPhoneOS Min Version: $IPHONEOS_MINVERSION"
+echo "OS min version: $MIN_VERSION"
 echo
 
 #Build
 
 set -e
 
-if $BUILD_SSL; then
-	./iSSH2-openssl.sh || cleanupFail $CLEAN_BUILD
+if [ $BUILD_SSL = true ]; then
+	"$BASEPATH/iSSH2-openssl.sh" || cleanupFail $CLEAN_BUILD
 fi
 
-if $BUILD_SSH; then
-	./iSSH2-libssh2.sh || cleanupFail $CLEAN_BUILD
+if [ $BUILD_SSH = true ]; then
+	"$BASEPATH/iSSH2-libssh2.sh" || cleanupFail $CLEAN_BUILD
 fi
 
-if $BUILD_SSL || $BUILD_SSH; then
+if [ $BUILD_SSL = true -o $BUILD_SSH = true ]; then
 	cleanupAll $CLEAN_BUILD
 fi

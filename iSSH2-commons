@@ -31,7 +31,7 @@ downloadFile () {
 	if [ ! -f "$path" ];
 	then
 		echo "Downloading $filename"
-		curl --progress-bar "$url" > "$path"
+		curl -L --progress-bar "$url" > "$path"
 	else
 		echo "$filename already exists"
 	fi

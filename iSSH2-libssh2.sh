@@ -23,9 +23,9 @@
 # THE SOFTWARE.                                                                #
 ################################################################################
 
-set -e
+source "$BASEPATH/iSSH2-commons"
 
-source ./iSSH2-functions
+set -e
 
 mkdir -p "$LIBSSHDIR"
 
@@ -45,12 +45,16 @@ echo "Building Libssh2 $LIBSSH_VERSION:"
 
 for ARCH in $ARCHS
 do
-	if [ "$ARCH" == "i386" -o "$ARCH" == "x86_64" ];
-	then
-		PLATFORM="iPhoneSimulator"
-	else
-		PLATFORM="iPhoneOS"
-	fi
+	if [ "$SDK_PLATFORM" == "macosx" ]; then
+		PLATFORM="MacOSX"
+  else
+		if [ "$ARCH" == "i386" -o "$ARCH" == "x86_64" ];
+		then
+			PLATFORM="iPhoneSimulator"
+		else
+			PLATFORM="iPhoneOS"
+		fi
+  fi
 
 	OPENSSLDIR="$BASEPATH/openssl/"
 	LIBSSH2DIR="$LIBSSHDIR/$PLATFORM$SDK_VERSION-$ARCH"
@@ -81,10 +85,10 @@ do
 	export SDKROOT="$DEVROOT/SDKs/$PLATFORM$SDK_VERSION.sdk"
 	export CC="$CLANG"
 	export CPP="$CLANG -E"
-	export CFLAGS="-arch $ARCH -pipe -no-cpp-precomp -isysroot $SDKROOT -miphoneos-version-min=$IPHONEOS_MINVERSION -fembed-bitcode"
-	export CPPFLAGS="-arch $ARCH -pipe -no-cpp-precomp -isysroot $SDKROOT -miphoneos-version-min=$IPHONEOS_MINVERSION"
+	export CFLAGS="-arch $ARCH -pipe -no-cpp-precomp -isysroot $SDKROOT -m$SDK_PLATFORM-version-min=$MIN_VERSION $EMBED_BITCODE"
+	export CPPFLAGS="-arch $ARCH -pipe -no-cpp-precomp -isysroot $SDKROOT -m$SDK_PLATFORM-version-min=$MIN_VERSION"
 
-	./Configure --host=$HOST --prefix="$LIBSSH2DIR" --with-openssl --with-libssl-prefix="$OPENSSLDIR" --disable-shared --enable-static  >> "$LOG" 2>&1
+	./Configure --host=$HOST --prefix="$LIBSSH2DIR" --disable-debug --disable-dependency-tracking --disable-silent-rules --disable-examples-build --with-libz --with-openssl --with-libssl-prefix="$OPENSSLDIR" --disable-shared --enable-static  >> "$LOG" 2>&1
 
 	make >> "$LOG" 2>&1
 	make install >> "$LOG" 2>&1
