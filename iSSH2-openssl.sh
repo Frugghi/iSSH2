@@ -49,7 +49,7 @@ do
 		PLATFORM="MacOSX"
 		CONF=""
   else
-		CONF="no-asm no-hw no-engine"
+		CONF="no-asm no-hw"
 		if [ "$ARCH" == "i386" -o "$ARCH" == "x86_64" ];
 		then
 			PLATFORM="iPhoneSimulator"
