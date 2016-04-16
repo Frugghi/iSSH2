@@ -45,71 +45,71 @@ echo "Building OpenSSL $LIBSSL_VERSION, please wait..."
 
 for ARCH in $ARCHS
 do
-	if [ "$SDK_PLATFORM" == "macosx" ]; then
-		PLATFORM="MacOSX"
-		CONF=""
+  if [ "$SDK_PLATFORM" == "macosx" ]; then
+    PLATFORM="MacOSX"
+    CONF=""
   else
-		CONF="no-asm no-hw"
-		if [ "$ARCH" == "i386" -o "$ARCH" == "x86_64" ];
-		then
-			PLATFORM="iPhoneSimulator"
-		else
-			PLATFORM="iPhoneOS"
-		fi
+    CONF="no-asm no-hw"
+    if [ "$ARCH" == "i386" -o "$ARCH" == "x86_64" ];
+    then
+      PLATFORM="iPhoneSimulator"
+    else
+      PLATFORM="iPhoneOS"
+    fi
   fi
 
-	OPENSSLDIR="$LIBSSLDIR/$PLATFORM$SDK_VERSION-$ARCH"
-	LIPO_LIBSSL="$LIPO_LIBSSL $OPENSSLDIR/libssl.a"
-	LIPO_LIBCRYPTO="$LIPO_LIBCRYPTO $OPENSSLDIR/libcrypto.a"
+  OPENSSLDIR="$LIBSSLDIR/$PLATFORM$SDK_VERSION-$ARCH"
+  LIPO_LIBSSL="$LIPO_LIBSSL $OPENSSLDIR/libssl.a"
+  LIPO_LIBCRYPTO="$LIPO_LIBCRYPTO $OPENSSLDIR/libcrypto.a"
 
-	(
-	if [ -f "$OPENSSLDIR/libssl.a" -a -f "$OPENSSLDIR/libcrypto.a" ];
-	then
-		echo "libssl.a and libcrypto.a for $ARCH already exist."
-		exit 0
-	fi
+  (
+  if [ -f "$OPENSSLDIR/libssl.a" -a -f "$OPENSSLDIR/libcrypto.a" ];
+  then
+    echo "libssl.a and libcrypto.a for $ARCH already exist."
+    exit 0
+  fi
 
-	rm -rf "$OPENSSLDIR"
-	cp -R "$LIBSSLSRC"  "$OPENSSLDIR"
-	cd "$OPENSSLDIR"
+  rm -rf "$OPENSSLDIR"
+  cp -R "$LIBSSLSRC"  "$OPENSSLDIR"
+  cd "$OPENSSLDIR"
 
-	LOG="$OPENSSLDIR/build-openssl.log"
-	touch $LOG
+  LOG="$OPENSSLDIR/build-openssl.log"
+  touch $LOG
 
-	if [ "$SDK_PLATFORM" == "macosx" ]; then
-		if [ "$ARCH" == "x86_64" ];
-		then
-			HOST="darwin64-x86_64-cc"
-		else
-			HOST="darwin-$ARCH-cc"
-		fi
-	else
-		if [ "$ARCH" == "arm64" -o "$ARCH" == "x86_64" ];
-		then
-			HOST="BSD-generic64"
-			CONF="$CONF enable-ec_nistp_64_gcc_128"
-		else
-			HOST="BSD-generic32"
-		fi
-	fi
+  if [ "$SDK_PLATFORM" == "macosx" ]; then
+    if [ "$ARCH" == "x86_64" ];
+    then
+      HOST="darwin64-x86_64-cc"
+    else
+      HOST="darwin-$ARCH-cc"
+    fi
+  else
+    if [ "$ARCH" == "arm64" -o "$ARCH" == "x86_64" ];
+    then
+      HOST="BSD-generic64"
+      CONF="$CONF enable-ec_nistp_64_gcc_128"
+    else
+      HOST="BSD-generic32"
+    fi
+  fi
 
-	if [ "$PLATFORM" == "iPhoneOS" ];
-	then
-		sed -ie "s!static volatile sig_atomic_t intr_signal;!static volatile intr_signal;!" "$OPENSSLDIR/crypto/ui/ui_openssl.c"
-	fi
+  if [ "$PLATFORM" == "iPhoneOS" ];
+  then
+    sed -ie "s!static volatile sig_atomic_t intr_signal;!static volatile intr_signal;!" "$OPENSSLDIR/crypto/ui/ui_openssl.c"
+  fi
 
-	export DEVROOT="$DEVELOPER/Platforms/$PLATFORM.platform/Developer"
-	export SDKROOT="$DEVROOT/SDKs/$PLATFORM$SDK_VERSION.sdk"
-	export CC="$CLANG"
+  export DEVROOT="$DEVELOPER/Platforms/$PLATFORM.platform/Developer"
+  export SDKROOT="$DEVROOT/SDKs/$PLATFORM$SDK_VERSION.sdk"
+  export CC="$CLANG"
 
-	./Configure $HOST $CONF >> "$LOG" 2>&1
+  ./Configure $HOST $CONF >> "$LOG" 2>&1
 
-	sed -ie "s!^CFLAG=!CFLAG=-isysroot $SDKROOT -arch $ARCH -m$SDK_PLATFORM-version-min=$MIN_VERSION $EMBED_BITCODE !" "Makefile"
+  sed -ie "s!^CFLAG=!CFLAG=-isysroot $SDKROOT -arch $ARCH -m$SDK_PLATFORM-version-min=$MIN_VERSION $EMBED_BITCODE !" "Makefile"
 
-	make build_libs >> "$LOG" 2>&1
+  make build_libs >> "$LOG" 2>&1
 
-	echo "- $PLATFORM $ARCH done!"
-	) &
+  echo "- $PLATFORM $ARCH done!"
+  ) &
 done
 
 wait

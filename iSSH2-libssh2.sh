@@ -45,56 +45,57 @@ echo "Building Libssh2 $LIBSSH_VERSION:"
 
 for ARCH in $ARCHS
 do
-	if [ "$SDK_PLATFORM" == "macosx" ]; then
-		PLATFORM="MacOSX"
+  if [ "$SDK_PLATFORM" == "macosx" ];
+  then
+    PLATFORM="MacOSX"
   else
-		if [ "$ARCH" == "i386" -o "$ARCH" == "x86_64" ];
-		then
-			PLATFORM="iPhoneSimulator"
-		else
-			PLATFORM="iPhoneOS"
-		fi
+    if [ "$ARCH" == "i386" -o "$ARCH" == "x86_64" ];
+    then
+      PLATFORM="iPhoneSimulator"
+    else
+      PLATFORM="iPhoneOS"
+    fi
   fi
 
-	OPENSSLDIR="$BASEPATH/openssl/"
-	LIBSSH2DIR="$LIBSSHDIR/$PLATFORM$SDK_VERSION-$ARCH"
-	LIPO_SSH2="$LIPO_SSH2 $LIBSSH2DIR/lib/libssh2.a"
+  OPENSSLDIR="$BASEPATH/openssl/"
+  LIBSSH2DIR="$LIBSSHDIR/$PLATFORM$SDK_VERSION-$ARCH"
+  LIPO_SSH2="$LIPO_SSH2 $LIBSSH2DIR/lib/libssh2.a"
 
-	(
-	if [ -f "$LIBSSH2DIR/lib/libssh2.a" ];
-	then
-		echo "libssh2.a for $ARCH already exists."
-		exit 0
-	fi
+  (
+  if [ -f "$LIBSSH2DIR/lib/libssh2.a" ];
+  then
+    echo "libssh2.a for $ARCH already exists."
+    exit 0
+  fi
 
-	rm -rf "$LIBSSH2DIR"
-	cp -R "$LIBSSHSRC"  "$LIBSSH2DIR"
-	cd "$LIBSSH2DIR"
+  rm -rf "$LIBSSH2DIR"
+  cp -R "$LIBSSHSRC"  "$LIBSSH2DIR"
+  cd "$LIBSSH2DIR"
 
-	LOG="$LIBSSH2DIR/build-libssh2.log"
-	touch $LOG
+  LOG="$LIBSSH2DIR/build-libssh2.log"
+  touch $LOG
 
-	if [ "$ARCH" == "arm64" ];
-	then
-		HOST="aarch64-apple-darwin"
-	else
-		HOST="$ARCH-apple-darwin"
-	fi
+  if [ "$ARCH" == "arm64" ];
+  then
+    HOST="aarch64-apple-darwin"
+  else
+    HOST="$ARCH-apple-darwin"
+  fi
 
-	export DEVROOT="$DEVELOPER/Platforms/$PLATFORM.platform/Developer"
-	export SDKROOT="$DEVROOT/SDKs/$PLATFORM$SDK_VERSION.sdk"
-	export CC="$CLANG"
-	export CPP="$CLANG -E"
-	export CFLAGS="-arch $ARCH -pipe -no-cpp-precomp -isysroot $SDKROOT -m$SDK_PLATFORM-version-min=$MIN_VERSION $EMBED_BITCODE"
-	export CPPFLAGS="-arch $ARCH -pipe -no-cpp-precomp -isysroot $SDKROOT -m$SDK_PLATFORM-version-min=$MIN_VERSION"
+  export DEVROOT="$DEVELOPER/Platforms/$PLATFORM.platform/Developer"
+  export SDKROOT="$DEVROOT/SDKs/$PLATFORM$SDK_VERSION.sdk"
+  export CC="$CLANG"
+  export CPP="$CLANG -E"
+  export CFLAGS="-arch $ARCH -pipe -no-cpp-precomp -isysroot $SDKROOT -m$SDK_PLATFORM-version-min=$MIN_VERSION $EMBED_BITCODE"
+  export CPPFLAGS="-arch $ARCH -pipe -no-cpp-precomp -isysroot $SDKROOT -m$SDK_PLATFORM-version-min=$MIN_VERSION"
 
-	./Configure --host=$HOST --prefix="$LIBSSH2DIR" --disable-debug --disable-dependency-tracking --disable-silent-rules --disable-examples-build --with-libz --with-openssl --with-libssl-prefix="$OPENSSLDIR" --disable-shared --enable-static  >> "$LOG" 2>&1
+  ./Configure --host=$HOST --prefix="$LIBSSH2DIR" --disable-debug --disable-dependency-tracking --disable-silent-rules --disable-examples-build --with-libz --with-openssl --with-libssl-prefix="$OPENSSLDIR" --disable-shared --enable-static  >> "$LOG" 2>&1
 
-	make >> "$LOG" 2>&1
-	make install >> "$LOG" 2>&1
+  make >> "$LOG" 2>&1
+  make install >> "$LOG" 2>&1
 
-	echo "- $PLATFORM $ARCH done!"
-	)&
+  echo "- $PLATFORM $ARCH done!"
+  )&
 done
 
 wait

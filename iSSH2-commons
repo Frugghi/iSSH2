@@ -24,49 +24,49 @@
 ################################################################################
 
 downloadFile () {
-	local url=$1
-	local path=$2
-	local filename=`basename "$2"`
+  local url=$1
+  local path=$2
+  local filename=`basename "$2"`
 
-	if [ ! -f "$path" ];
-	then
-		echo "Downloading $filename"
-		curl -L --progress-bar "$url" > "$path"
-	else
-		echo "$filename already exists"
-	fi
+  if [ ! -f "$path" ];
+  then
+    echo "Downloading $filename"
+    curl -L --progress-bar "$url" > "$path"
+  else
+    echo "$filename already exists"
+  fi
 
-	local md5=`md5 -q $path`
-	echo "MD5: $md5"
+  local md5=`md5 -q $path`
+  echo "MD5: $md5"
 }
 
 lipoFatLibrary () {
-	local inputs=$1
-	local output=$2
-	local dirname=`dirname "$2"`
-	local filename=`basename "$2"`
+  local inputs=$1
+  local output=$2
+  local dirname=`dirname "$2"`
+  local filename=`basename "$2"`
 
-	echo "Building $filename fat library..."
+  echo "Building $filename fat library..."
 
-	if [ ! -e "$dirname" ];
-	then
-		mkdir -p "$dirname"
-	fi
+  if [ ! -e "$dirname" ];
+  then
+    mkdir -p "$dirname"
+  fi
 
-	if [ -e "$output" ];
-	then
-		rm -f "$output"
-	fi
+  if [ -e "$output" ];
+  then
+    rm -f "$output"
+  fi
 
-	lipo -create $inputs -output "$output"
+  lipo -create $inputs -output "$output"
 }
 
 importHeaders () {
-	local input=$1
-	local output=$2
+  local input=$1
+  local output=$2
 
-	echo "Copying headers..."
-	rm -rf "$output"
-	mkdir -p "$output"
-	cp -RL "$input" "$output"
+  echo "Copying headers..."
+  rm -rf "$output"
+  mkdir -p "$output"
+  cp -RL "$input" "$output"
 }

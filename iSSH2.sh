@@ -28,61 +28,61 @@ export SCRIPTNAME="iSSH2"
 #Functions
 
 cleanupFail () {
-	if $1; then
-		echo "Build failed, cleaning up temporary files..."
-		rm -rf "$LIBSSLDIR/src/" "$LIBSSLDIR/tmp/" "$LIBSSHDIR/src/" "$LIBSSHDIR/tmp/"
-		exit 1
-	fi
+  if $1; then
+    echo "Build failed, cleaning up temporary files..."
+    rm -rf "$LIBSSLDIR/src/" "$LIBSSLDIR/tmp/" "$LIBSSHDIR/src/" "$LIBSSHDIR/tmp/"
+    exit 1
+  fi
 }
 
 cleanupAll () {
-	if $1; then
-		echo "Cleaning up temporary files..."
-		rm -rf "$TEMPPATH"
-	fi
+  if $1; then
+    echo "Cleaning up temporary files..."
+    rm -rf "$TEMPPATH"
+  fi
 }
 
 getLibssh2Version () {
-	if type git >/dev/null 2>&1; then
-		LIBSSH_VERSION=`git ls-remote --tags https://github.com/libssh2/libssh2.git | egrep "libssh2-[0-9]+(\.[0-9])*[a-zA-Z]?$" | cut -f 2 -d - | sort -t . -r | head -n 1`
-		LIBSSH_AUTO=true
-	else
-		echo "Install git to automatically get the latest Libssh2 version or use the --libssh2 argument"
-		echo "Try '$SCRIPTNAME --help' for more information."
-		exit 2
-	fi
+  if type git >/dev/null 2>&1; then
+    LIBSSH_VERSION=`git ls-remote --tags https://github.com/libssh2/libssh2.git | egrep "libssh2-[0-9]+(\.[0-9])*[a-zA-Z]?$" | cut -f 2 -d - | sort -t . -r | head -n 1`
+    LIBSSH_AUTO=true
+  else
+    echo "Install git to automatically get the latest Libssh2 version or use the --libssh2 argument"
+    echo "Try '$SCRIPTNAME --help' for more information."
+    exit 2
+  fi
 }
 
 getOpensslVersion () {
-	if type git >/dev/null 2>&1; then
-		LIBSSL_VERSION=`git ls-remote --tags git://git.openssl.org/openssl.git | egrep "OpenSSL(_[0-9])+[a-zA-Z]?$" | cut -f 2,3,4 -d _ | sort -t _ -r | head -n 1 | tr _ . `
-		LIBSSL_AUTO=true
-	else
-		echo "Install git to automatically get the latest OpenSSL version or use the --openssl argument"
-		echo "Try '$SCRIPTNAME --help' for more information."
-		exit 2
-	fi
+  if type git >/dev/null 2>&1; then
+    LIBSSL_VERSION=`git ls-remote --tags git://git.openssl.org/openssl.git | egrep "OpenSSL(_[0-9])+[a-zA-Z]?$" | cut -f 2,3,4 -d _ | sort -t _ -r | head -n 1 | tr _ . `
+    LIBSSL_AUTO=true
+  else
+    echo "Install git to automatically get the latest OpenSSL version or use the --openssl argument"
+    echo "Try '$SCRIPTNAME --help' for more information."
+    exit 2
+  fi
 }
 
 usageHelp () {
-	echo
-	echo "Usage: $SCRIPTNAME.sh [options]"
-	echo
-	echo "This script download and build OpenSSL and Libssh2 libraries."
-	echo
-	echo "Options:"
-	echo "  -a, --archs=[ARCHS]       build for [ARCHS] architectures"
-	echo "  -v, --min-version=VERS    set iPhone or Mac OS minimum version to VERS"
-	echo "  -s, --sdk-version=VERS    use SDK version VERS"
-	echo "  -l, --libssh2=VERS        download and build Libssh2 version VERS"
-	echo "  -o, --openssl=VERS        download and build OpenSSL version VERS"
-	echo "      --build-only-openssl  build OpenSSL and skip Libssh2"
-	echo "      --no-clean            do not clean build folder"
-	echo "      --osx                 build only for OSX"
-	echo "      --no-bitcode          don't embed bitcode"
-	echo "  -h, --help                display this help and exit"
-	echo
-	exit 1
+  echo
+  echo "Usage: $SCRIPTNAME.sh [options]"
+  echo
+  echo "This script download and build OpenSSL and Libssh2 libraries."
+  echo
+  echo "Options:"
+  echo "  -a, --archs=[ARCHS]       build for [ARCHS] architectures"
+  echo "  -v, --min-version=VERS    set iPhone or Mac OS minimum version to VERS"
+  echo "  -s, --sdk-version=VERS    use SDK version VERS"
+  echo "  -l, --libssh2=VERS        download and build Libssh2 version VERS"
+  echo "  -o, --openssl=VERS        download and build OpenSSL version VERS"
+  echo "      --build-only-openssl  build OpenSSL and skip Libssh2"
+  echo "      --no-clean            do not clean build folder"
+  echo "      --osx                 build only for OSX"
+  echo "      --no-bitcode          don't embed bitcode"
+  echo "  -h, --help                display this help and exit"
+  echo
+  exit 1
 }
 
 #Config
@@ -123,61 +123,61 @@ while getopts ':a:l:o:v:s:h-' OPTION ; do
              --min-version) MIN_VERSION="$OPTARG" ;;
              --build-only-openssl) BUILD_SSH=false ;;
              --only-print-env) BUILD_SSL=false; BUILD_SSH=false ;;
-						 --osx) BUILD_OSX=true ;;
-						 --no-bitcode) EMBED_BITCODE="" ;;
-						 --no-clean) CLEAN_BUILD=false ;;
+             --osx) BUILD_OSX=true ;;
+             --no-bitcode) EMBED_BITCODE="" ;;
+             --no-clean) CLEAN_BUILD=false ;;
              --help) usageHelp ;;
              * ) echo "$SCRIPTNAME: Invalid option '$FULL_OPTION'"
-             	   echo "Try '$SCRIPTNAME --help' for more information."
-             	   exit 1 ;;
+                  echo "Try '$SCRIPTNAME --help' for more information."
+                  exit 1 ;;
          esac
        OPTIND=1
        shift
       ;;
     \?) echo "$SCRIPTNAME: Invalid option -- $OPTION"
-    	  echo "Try '$SCRIPTNAME --help' for more information."
-    	  exit 1 ;;
+        echo "Try '$SCRIPTNAME --help' for more information."
+        exit 1 ;;
   esac
 done
 
 echo "Initializing..."
 
 if [ -z "$MIN_VERSION" ]; then
-	if [ $BUILD_OSX = true ]; then
-		MIN_VERSION="10.10"
-	else
-		MIN_VERSION="8.0"
-	fi
+  if [ $BUILD_OSX = true ]; then
+    MIN_VERSION="10.10"
+  else
+    MIN_VERSION="8.0"
+  fi
 fi
 
 if [ -z "$ARCHS" ]; then
-	if [ $BUILD_OSX = true ]; then
-		ARCHS="$OSX_ARCHS"
-	else
-		ARCHS="$IOS_ARCHS $OSX_ARCHS"
-	fi
+  if [ $BUILD_OSX = true ]; then
+    ARCHS="$OSX_ARCHS"
+  else
+    ARCHS="$IOS_ARCHS $OSX_ARCHS"
+  fi
 fi
 
 LIBSSH_AUTO=false
 if [ -z "$LIBSSH_VERSION" ]; then
-	getLibssh2Version
+  getLibssh2Version
 fi
 
 LIBSSL_AUTO=false
 if [ -z "$LIBSSL_VERSION" ]; then
-	getOpensslVersion
+  getOpensslVersion
 fi
 
 if [ $BUILD_OSX = true ]; then
   SDK_PLATFORM="macosx"
 else
-	SDK_PLATFORM="iphoneos"
+  SDK_PLATFORM="iphoneos"
 fi
 
 SDK_AUTO=false
 if [ -z "$SDK_VERSION" ]; then
- 	SDK_VERSION=`xcrun --sdk $SDK_PLATFORM --show-sdk-version`
- 	SDK_AUTO=true
+   SDK_VERSION=`xcrun --sdk $SDK_PLATFORM --show-sdk-version`
+   SDK_AUTO=true
 fi
 
 export CLANG=`xcrun --find clang`
@@ -193,21 +193,21 @@ export LIBSSHDIR="$TEMPPATH/libssh2-$LIBSSH_VERSION"
 
 echo
 if [ $LIBSSH_AUTO = true ]; then
-	echo "Libssh2 version: $LIBSSH_VERSION (Automatically detected)"
+  echo "Libssh2 version: $LIBSSH_VERSION (Automatically detected)"
 else
-	echo "Libssh2 version: $LIBSSH_VERSION"
+  echo "Libssh2 version: $LIBSSH_VERSION"
 fi
 
 if [ $LIBSSL_AUTO = true ]; then
-	echo "OpenSSL version: $LIBSSL_VERSION (Automatically detected)"
+  echo "OpenSSL version: $LIBSSL_VERSION (Automatically detected)"
 else
-	echo "OpenSSL version: $LIBSSL_VERSION"
+  echo "OpenSSL version: $LIBSSL_VERSION"
 fi
 
 if [ $SDK_AUTO = true ]; then
-	echo "SDK version: $SDK_VERSION (Automatically detected)"
+  echo "SDK version: $SDK_VERSION (Automatically detected)"
 else
-	echo "SDK version: $SDK_VERSION"
+  echo "SDK version: $SDK_VERSION"
 fi
 
 echo "Architectures: $ARCHS"
@@ -219,13 +219,13 @@ echo
 set -e
 
 if [ $BUILD_SSL = true ]; then
-	"$BASEPATH/iSSH2-openssl.sh" || cleanupFail $CLEAN_BUILD
+  "$BASEPATH/iSSH2-openssl.sh" || cleanupFail $CLEAN_BUILD
 fi
 
 if [ $BUILD_SSH = true ]; then
-	"$BASEPATH/iSSH2-libssh2.sh" || cleanupFail $CLEAN_BUILD
+  "$BASEPATH/iSSH2-libssh2.sh" || cleanupFail $CLEAN_BUILD
 fi
 
 if [ $BUILD_SSL = true -o $BUILD_SSH = true ]; then
-	cleanupAll $CLEAN_BUILD
+  cleanupAll $CLEAN_BUILD
 fi
