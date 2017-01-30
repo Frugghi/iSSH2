@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
                                    #########
 #################################### iSSH2 #####################################
 #                                  #########                                   #
@@ -55,7 +55,7 @@ getLibssh2Version () {
 
 getOpensslVersion () {
   if type git >/dev/null 2>&1; then
-    LIBSSL_VERSION=`git ls-remote --tags git://git.openssl.org/openssl.git | egrep "OpenSSL(_[0-9])+[a-zA-Z]?$" | cut -f 2,3,4 -d _ | sort -t _ -r | head -n 1 | tr _ . `
+    LIBSSL_VERSION=`git ls-remote --tags git://git.openssl.org/openssl.git | egrep "OpenSSL(_[0-9])+[a-zA-Z]?$" | cut -f 2,3,4 -d _ | egrep "^(0|1_0)" | sort -t _ -r | head -n 1 | tr _ .`
     LIBSSL_AUTO=true
   else
     echo "Install git to automatically get the latest OpenSSL version or use the --openssl argument"
@@ -111,7 +111,7 @@ while getopts ':a:l:o:v:s:h-' OPTION ; do
     l) LIBSSH_VERSION="$OPTARG" ;;
     o) LIBSSL_VERSION="$OPTARG" ;;
     h) usageHelp ;;
-    -) [ $OPTIND -ge 1 ] && optind=$(expr $OPTIND - 1 ) || optind=$OPTIND
+    -) [[ $OPTIND -ge 1 ]] && optind=$(expr $OPTIND - 1 ) || optind=$OPTIND
          eval FULL_OPTION="\$$optind"
          OPTARG=$(echo $FULL_OPTION | cut -d'=' -f2)
          OPTION=$(echo $FULL_OPTION | cut -d'=' -f1)
@@ -142,16 +142,16 @@ done
 
 echo "Initializing..."
 
-if [ -z "$MIN_VERSION" ]; then
-  if [ $BUILD_OSX = true ]; then
+if [[ -z "$MIN_VERSION" ]]; then
+  if [[ $BUILD_OSX == true ]]; then
     MIN_VERSION="10.10"
   else
     MIN_VERSION="8.0"
   fi
 fi
 
-if [ -z "$ARCHS" ]; then
-  if [ $BUILD_OSX = true ]; then
+if [[ -z "$ARCHS" ]]; then
+  if [[ $BUILD_OSX == true ]]; then
     ARCHS="$OSX_ARCHS"
   else
     ARCHS="$IOS_ARCHS $OSX_ARCHS"
@@ -159,52 +159,54 @@ if [ -z "$ARCHS" ]; then
 fi
 
 LIBSSH_AUTO=false
-if [ -z "$LIBSSH_VERSION" ]; then
+if [[ -z "$LIBSSH_VERSION" ]]; then
   getLibssh2Version
 fi
 
 LIBSSL_AUTO=false
-if [ -z "$LIBSSL_VERSION" ]; then
+if [[ -z "$LIBSSL_VERSION" ]]; then
   getOpensslVersion
 fi
 
-if [ $BUILD_OSX = true ]; then
+if [[ $BUILD_OSX == true ]]; then
   SDK_PLATFORM="macosx"
 else
   SDK_PLATFORM="iphoneos"
 fi
 
 SDK_AUTO=false
-if [ -z "$SDK_VERSION" ]; then
+if [[ -z "$SDK_VERSION" ]]; then
    SDK_VERSION=`xcrun --sdk $SDK_PLATFORM --show-sdk-version`
    SDK_AUTO=true
 fi
+
+export BUILD_THREADS=$(sysctl hw.ncpu | awk '{print $2}')
 
 export CLANG=`xcrun --find clang`
 export GCC=`xcrun --find gcc`
 export DEVELOPER=`xcode-select --print-path`
 
 export BASEPATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-export TEMPPATH="$TMPDIR/$SCRIPTNAME"
+export TEMPPATH="$TMPDIR$SCRIPTNAME"
 export LIBSSLDIR="$TEMPPATH/openssl-$LIBSSL_VERSION"
 export LIBSSHDIR="$TEMPPATH/libssh2-$LIBSSH_VERSION"
 
 #Env
 
 echo
-if [ $LIBSSH_AUTO = true ]; then
+if [[ $LIBSSH_AUTO == true ]]; then
   echo "Libssh2 version: $LIBSSH_VERSION (Automatically detected)"
 else
   echo "Libssh2 version: $LIBSSH_VERSION"
 fi
 
-if [ $LIBSSL_AUTO = true ]; then
+if [[ $LIBSSL_AUTO == true ]]; then
   echo "OpenSSL version: $LIBSSL_VERSION (Automatically detected)"
 else
   echo "OpenSSL version: $LIBSSL_VERSION"
 fi
 
-if [ $SDK_AUTO = true ]; then
+if [[ $SDK_AUTO == true ]]; then
   echo "SDK version: $SDK_VERSION (Automatically detected)"
 else
   echo "SDK version: $SDK_VERSION"
@@ -218,14 +220,14 @@ echo
 
 set -e
 
-if [ $BUILD_SSL = true ]; then
+if [[ $BUILD_SSL == true ]]; then
   "$BASEPATH/iSSH2-openssl.sh" || cleanupFail $CLEAN_BUILD
 fi
 
-if [ $BUILD_SSH = true ]; then
+if [[ $BUILD_SSH == true ]]; then
   "$BASEPATH/iSSH2-libssh2.sh" || cleanupFail $CLEAN_BUILD
 fi
 
-if [ $BUILD_SSL = true -o $BUILD_SSH = true ]; then
+if [[ $BUILD_SSL == true ]] || [[ $BUILD_SSH == true ]]; then
   cleanupAll $CLEAN_BUILD
 fi
