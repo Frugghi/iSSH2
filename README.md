@@ -2,7 +2,7 @@
 
 iSSH2 is a bash script for compiling Libssh2 (and OpenSSL) for iOS, iPhone Simulator and OSX.
 
-The current version supports armv7, armv7s, arm64, i386, x86_64 architectures.
+The current version supports armv7, armv7s, arm64, x86_64 architectures.
 
 - Libssh2: [Website](http://www.libssh2.org) | [Documentation](http://www.libssh2.org/docs.html) | [Changelog](http://www.libssh2.org/changes.html)
 - OpenSSL: [Website](http://www.openssl.org) | [Documentation](http://www.openssl.org/docs/) | [Changelog](http://www.openssl.org/news/)
@@ -19,12 +19,12 @@ The current version supports armv7, armv7s, arm64, i386, x86_64 architectures.
 
 ## Tested with
 
-- Xcode: 8.2.1
-- iOS SDK: 10.2
+- Xcode: 8.3.3
+- iOS SDK: 10.3
 - MacOS SDK: 10.12
 - Libssh2: 1.8.0
-- OpenSSL: 1.0.2k
-- Architectures: armv7, armv7s, arm64, i386, x86_64
+- OpenSSL: 1.1.0f
+- Architectures: armv7, armv7s, arm64, x86_64
 
 ## How to use
 

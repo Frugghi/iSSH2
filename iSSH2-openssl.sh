@@ -49,7 +49,7 @@ do
     PLATFORM="MacOSX"
     CONF="no-shared"
   else
-    CONF="no-asm no-hw no-shared"
+    CONF="no-asm no-hw no-shared no-async"
     if [[ "$ARCH" == "i386" ]] || [[ "$ARCH" == "x86_64" ]]; then
       PLATFORM="iPhoneSimulator"
     else
@@ -78,28 +78,24 @@ do
         HOST="darwin-$ARCH-cc"
       fi
     else
+      HOST="iphoneos-cross"
       if [[ "${ARCH}" == *64 ]]; then
-        HOST="BSD-generic64"
         CONF="$CONF enable-ec_nistp_64_gcc_128"
-      else
-        HOST="BSD-generic32"
       fi
     fi
 
-    if [[ "$PLATFORM" == "iPhoneOS" ]]; then
-      sed -ie "s!static volatile sig_atomic_t intr_signal;!static volatile intr_signal;!" "$OPENSSLDIR/crypto/ui/ui_openssl.c"
-    fi
-
-    export DEVROOT="$DEVELOPER/Platforms/$PLATFORM.platform/Developer"
-    export SDKROOT="$DEVROOT/SDKs/$PLATFORM$SDK_VERSION.sdk"
+    export CROSS_TOP="$DEVELOPER/Platforms/$PLATFORM.platform/Developer"
+    export CROSS_SDK="$PLATFORM$SDK_VERSION.sdk"
+    export SDKROOT="$CROSS_TOP/SDKs/$CROSS_SDK"
     export CC="$CLANG -arch $ARCH"
 
     CONF="$CONF -m$SDK_PLATFORM-version-min=$MIN_VERSION $EMBED_BITCODE"
 
     ./Configure $HOST $CONF >> "$LOG" 2>&1
 
-    #sed -ie "s!^CFLAG=!CFLAG=-isysroot $SDKROOT !" "Makefile"
-    export CFLAG="-isysroot $SDKROOT"
+    if [[ "$ARCH" == "x86_64" ]]; then
+      sed -ie "s!^CFLAG=!CFLAG=-isysroot $SDKROOT !" "Makefile"
+    fi
 
     make depend >> "$LOG" 2>&1
     make -j "$BUILD_THREADS" build_libs >> "$LOG" 2>&1

@@ -32,6 +32,8 @@ cleanupFail () {
     echo "Build failed, cleaning up temporary files..."
     rm -rf "$LIBSSLDIR/src/" "$LIBSSLDIR/tmp/" "$LIBSSHDIR/src/" "$LIBSSHDIR/tmp/"
     exit 1
+  else
+    echo "Temporary files location: $TEMPPATH"
   fi
 }
 
@@ -55,7 +57,7 @@ getLibssh2Version () {
 
 getOpensslVersion () {
   if type git >/dev/null 2>&1; then
-    LIBSSL_VERSION=`git ls-remote --tags git://git.openssl.org/openssl.git | egrep "OpenSSL(_[0-9])+[a-zA-Z]?$" | cut -f 2,3,4 -d _ | egrep "^(0|1_0)" | sort -t _ -r | head -n 1 | tr _ .`
+    LIBSSL_VERSION=`git ls-remote --tags git://git.openssl.org/openssl.git | egrep "OpenSSL(_[0-9])+[a-zA-Z]?$" | cut -f 2,3,4 -d _ | sort -t _ -r | head -n 1 | tr _ .`
     LIBSSL_AUTO=true
   else
     echo "Install git to automatically get the latest OpenSSL version or use the --openssl argument"
@@ -95,7 +97,7 @@ export ARCHS=
 export SDK_PLATFORM=
 export EMBED_BITCODE="-fembed-bitcode"
 
-OSX_ARCHS="i386 x86_64"
+OSX_ARCHS="x86_64"
 IOS_ARCHS="armv7 armv7s arm64"
 
 BUILD_OSX=false

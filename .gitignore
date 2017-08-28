@@ -2,3 +2,4 @@ tmp
 openssl
 libssh2
 libressl
+.DS_Store
