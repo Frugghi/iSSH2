@@ -56,17 +56,20 @@ do
   fi
 
   OPENSSLDIR="$BASEPATH/openssl/"
-  LIBSSH2DIR="$LIBSSHDIR/$PLATFORM$SDK_VERSION-$ARCH"
-  LIPO_SSH2="$LIPO_SSH2 $LIBSSH2DIR/lib/libssh2.a"
+  PLATFORM_SRC="$LIBSSHDIR/${PLATFORM}_$SDK_VERSION-$ARCH/src"
+  PLATFORM_OUT="$LIBSSHDIR/${PLATFORM}_$SDK_VERSION-$ARCH/install"
+  LIPO_SSH2="$LIPO_SSH2 $PLATFORM_OUT/lib/libssh2.a"
 
-  if [[ -f "$LIBSSH2DIR/lib/libssh2.a" ]]; then
+  if [[ -f "$PLATFORM_OUT/lib/libssh2.a" ]]; then
     echo "libssh2.a for $ARCH already exists."
   else
-    rm -rf "$LIBSSH2DIR"
-    cp -R "$LIBSSHSRC"  "$LIBSSH2DIR"
-    cd "$LIBSSH2DIR"
+    rm -rf "$PLATFORM_SRC"
+    rm -rf "$PLATFORM_OUT"
+    mkdir -p "$PLATFORM_OUT"
+    cp -R "$LIBSSHSRC" "$PLATFORM_SRC"
+    cd "$PLATFORM_SRC"
 
-    LOG="$LIBSSH2DIR/build-libssh2.log"
+    LOG="$PLATFORM_OUT/build-libssh2.log"
     touch $LOG
 
     if [[ "$ARCH" == "arm64" ]]; then
@@ -82,7 +85,7 @@ do
     export CFLAGS="-arch $ARCH -pipe -no-cpp-precomp -isysroot $SDKROOT -m$SDK_PLATFORM-version-min=$MIN_VERSION $EMBED_BITCODE"
     export CPPFLAGS="-arch $ARCH -pipe -no-cpp-precomp -isysroot $SDKROOT -m$SDK_PLATFORM-version-min=$MIN_VERSION"
 
-    ./Configure --host=$HOST --prefix="$LIBSSH2DIR" --disable-debug --disable-dependency-tracking --disable-silent-rules --disable-examples-build --with-libz --with-openssl --with-libssl-prefix="$OPENSSLDIR" --disable-shared --enable-static  >> "$LOG" 2>&1
+    ./Configure --host=$HOST --prefix="$PLATFORM_OUT" --disable-debug --disable-dependency-tracking --disable-silent-rules --disable-examples-build --with-libz --with-openssl --with-libssl-prefix="$OPENSSLDIR" --disable-shared --enable-static  >> "$LOG" 2>&1
 
     make >> "$LOG" 2>&1
     make -j "$BUILD_THREADS" install >> "$LOG" 2>&1

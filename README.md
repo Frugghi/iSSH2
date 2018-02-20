@@ -19,11 +19,11 @@ The current version supports armv7, armv7s, arm64, x86_64 architectures.
 
 ## Tested with
 
-- Xcode: 8.3.3
-- iOS SDK: 10.3
+- Xcode: 9.2.0
+- iOS SDK: 11.2
 - MacOS SDK: 10.12
 - Libssh2: 1.8.0
-- OpenSSL: 1.1.0f
+- OpenSSL: 1.1.0g
 - Architectures: armv7, armv7s, arm64, x86_64
 
 ## How to use

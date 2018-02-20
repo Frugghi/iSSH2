@@ -31,16 +31,18 @@ cleanupFail () {
   if $1; then
     echo "Build failed, cleaning up temporary files..."
     rm -rf "$LIBSSLDIR/src/" "$LIBSSLDIR/tmp/" "$LIBSSHDIR/src/" "$LIBSSHDIR/tmp/"
-    exit 1
   else
-    echo "Temporary files location: $TEMPPATH"
+    echo "Build failed, temporary files location: $TEMPPATH"
   fi
+  exit 1
 }
 
 cleanupAll () {
   if $1; then
     echo "Cleaning up temporary files..."
     rm -rf "$TEMPPATH"
+  else
+    echo "Temporary files location: $TEMPPATH"
   fi
 }
 
