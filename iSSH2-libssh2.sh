@@ -45,17 +45,8 @@ echo "Building Libssh2 $LIBSSH_VERSION:"
 
 for ARCH in $ARCHS
 do
-  if [[ "$SDK_PLATFORM" == "macosx" ]]; then
-    PLATFORM="MacOSX"
-  else
-    if [[ "$ARCH" == "i386" ]] || [[ "$ARCH" == "x86_64" ]]; then
-      PLATFORM="iPhoneSimulator"
-    else
-      PLATFORM="iPhoneOS"
-    fi
-  fi
-
-  OPENSSLDIR="$BASEPATH/openssl/"
+  PLATFORM="$(platformName "$SDK_PLATFORM" "$ARCH")"
+  OPENSSLDIR="$BASEPATH/openssl_$SDK_PLATFORM/"
   PLATFORM_SRC="$LIBSSHDIR/${PLATFORM}_$SDK_VERSION-$ARCH/src"
   PLATFORM_OUT="$LIBSSHDIR/${PLATFORM}_$SDK_VERSION-$ARCH/install"
   LIPO_SSH2="$LIPO_SSH2 $PLATFORM_OUT/lib/libssh2.a"
@@ -72,7 +63,7 @@ do
     LOG="$PLATFORM_OUT/build-libssh2.log"
     touch $LOG
 
-    if [[ "$ARCH" == "arm64" ]]; then
+    if [[ "$ARCH" == arm64* ]]; then
       HOST="aarch64-apple-darwin"
     else
       HOST="$ARCH-apple-darwin"
@@ -94,8 +85,8 @@ do
   fi
 done
 
-lipoFatLibrary "$LIPO_SSH2" "$BASEPATH/libssh2/lib/libssh2.a"
+lipoFatLibrary "$LIPO_SSH2" "$BASEPATH/libssh2_$SDK_PLATFORM/lib/libssh2.a"
 
-importHeaders "$LIBSSHSRC/include/" "$BASEPATH/libssh2/include"
+importHeaders "$LIBSSHSRC/include/" "$BASEPATH/libssh2_$SDK_PLATFORM/include"
 
 echo "Building done."

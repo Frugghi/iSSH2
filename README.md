@@ -1,8 +1,6 @@
 # iSSH2
 
-iSSH2 is a bash script for compiling Libssh2 (and OpenSSL) for iOS, iPhone Simulator and OSX.
-
-The current version supports armv7, armv7s, arm64, x86_64 architectures.
+iSSH2 is a bash script for compiling Libssh2 (and OpenSSL) for iOS, macOS, watchOS and tvOS.
 
 - Libssh2: [Website](http://www.libssh2.org) | [Documentation](http://www.libssh2.org/docs.html) | [Changelog](http://www.libssh2.org/changes.html)
 - OpenSSL: [Website](http://www.openssl.org) | [Documentation](http://www.openssl.org/docs/) | [Changelog](http://www.openssl.org/news/)
@@ -11,7 +9,6 @@ The current version supports armv7, armv7s, arm64, x86_64 architectures.
 
 - Xcode
 - Xcode Command Line Tools
-- iOS SDK or MacOS SDK
 
 #### Optional Requirements
 
@@ -19,17 +16,16 @@ The current version supports armv7, armv7s, arm64, x86_64 architectures.
 
 ## Tested with
 
-- Xcode: 9.2.0
-- iOS SDK: 11.2
-- MacOS SDK: 10.12
-- Libssh2: 1.8.0
-- OpenSSL: 1.1.0g
-- Architectures: armv7, armv7s, arm64, x86_64
+- Xcode: 10.2.1
+- iOS SDK: 12.2
+- Libssh2: 1.9.0
+- OpenSSL: 1.1.1c
+- Architectures: arm64 arm64e armv7 armv7s i386 x86_64
 
 ## How to use
 
 1. Download the script
-2. Run `iSSH2.sh` in Terminal
+2. Run `iSSH2.sh` passing `--platform=PLATFORM --min-version=VERS` or `--xcodeproj=PATH --target=TARGET` as options (for example: `./iSSH2.sh --platform=iphoneos --min-version=8.0`)
 3. Take a cup of coffee while waiting
 
 ## Script help
@@ -41,15 +37,21 @@ This script download and build OpenSSL and Libssh2 libraries.
 
 Options:
   -a, --archs=[ARCHS]       build for [ARCHS] architectures
-  -v, --min-version=VERS    set iPhone or Mac OS minimum version to VERS
+  -p, --platform=PLATFORM   build for PLATFORM platform
+  -v, --min-version=VERS    set platform minimum version to VERS
   -s, --sdk-version=VERS    use SDK version VERS
   -l, --libssh2=VERS        download and build Libssh2 version VERS
   -o, --openssl=VERS        download and build OpenSSL version VERS
+  -x, --xcodeproj=PATH      get info from the project (requires TARGET)
+  -t, --target=TARGET       get info from the target (requires XCODEPROJ)
       --build-only-openssl  build OpenSSL and skip Libssh2
       --no-clean            do not clean build folder
-      --osx                 build only for OSX
       --no-bitcode          don't embed bitcode
   -h, --help                display this help and exit
+
+Valid platforms: iphoneos, macosx, appletvos, watchos
+
+Xcodeproj and target or platform and min version must be set.
 ```
 
 ## License

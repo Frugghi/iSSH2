@@ -46,17 +46,12 @@ echo "Building OpenSSL $LIBSSL_VERSION, please wait..."
 for ARCH in $ARCHS
 do
   if [[ "$SDK_PLATFORM" == "macosx" ]]; then
-    PLATFORM="MacOSX"
     CONF="no-shared"
   else
     CONF="no-asm no-hw no-shared no-async"
-    if [[ "$ARCH" == "i386" ]] || [[ "$ARCH" == "x86_64" ]]; then
-      PLATFORM="iPhoneSimulator"
-    else
-      PLATFORM="iPhoneOS"
-    fi
   fi
 
+  PLATFORM="$(platformName "$SDK_PLATFORM" "$ARCH")"
   OPENSSLDIR="$LIBSSLDIR/${PLATFORM}_$SDK_VERSION-$ARCH"
   LIPO_LIBSSL="$LIPO_LIBSSL $OPENSSLDIR/libssl.a"
   LIPO_LIBCRYPTO="$LIPO_LIBCRYPTO $OPENSSLDIR/libcrypto.a"
@@ -79,7 +74,7 @@ do
       fi
     else
       HOST="iphoneos-cross"
-      if [[ "${ARCH}" == *64 ]]; then
+      if [[ "${ARCH}" == *64 ]] || [[ "${ARCH}" == arm64* ]]; then
         CONF="$CONF enable-ec_nistp_64_gcc_128"
       fi
     fi
@@ -104,9 +99,9 @@ do
   fi
 done
 
-lipoFatLibrary "$LIPO_LIBSSL" "$BASEPATH/openssl/lib/libssl.a"
-lipoFatLibrary "$LIPO_LIBCRYPTO" "$BASEPATH/openssl/lib/libcrypto.a"
+lipoFatLibrary "$LIPO_LIBSSL" "$BASEPATH/openssl_$SDK_PLATFORM/lib/libssl.a"
+lipoFatLibrary "$LIPO_LIBCRYPTO" "$BASEPATH/openssl_$SDK_PLATFORM/lib/libcrypto.a"
 
-importHeaders "$OPENSSLDIR/include/" "$BASEPATH/openssl/include"
+importHeaders "$OPENSSLDIR/include/" "$BASEPATH/openssl_$SDK_PLATFORM/include"
 
 echo "Building done."

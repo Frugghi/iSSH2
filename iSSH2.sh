@@ -68,6 +68,14 @@ getOpensslVersion () {
   fi
 }
 
+getBuildSetting () {
+  echo "${1}" | grep -i "^\s*${2}\s*=\s*" | cut -d= -f2 | xargs echo -n
+}
+
+version () {
+  printf "%02d%02d%02d" ${1//./ }
+}
+
 usageHelp () {
   echo
   echo "Usage: $SCRIPTNAME.sh [options]"
@@ -76,15 +84,21 @@ usageHelp () {
   echo
   echo "Options:"
   echo "  -a, --archs=[ARCHS]       build for [ARCHS] architectures"
-  echo "  -v, --min-version=VERS    set iPhone or Mac OS minimum version to VERS"
+  echo "  -p, --platform=PLATFORM   build for PLATFORM platform"
+  echo "  -v, --min-version=VERS    set platform minimum version to VERS"
   echo "  -s, --sdk-version=VERS    use SDK version VERS"
   echo "  -l, --libssh2=VERS        download and build Libssh2 version VERS"
   echo "  -o, --openssl=VERS        download and build OpenSSL version VERS"
+  echo "  -x, --xcodeproj=PATH      get info from the project (requires TARGET)"
+  echo "  -t, --target=TARGET       get info from the target (requires XCODEPROJ)"
   echo "      --build-only-openssl  build OpenSSL and skip Libssh2"
   echo "      --no-clean            do not clean build folder"
-  echo "      --osx                 build only for OSX"
   echo "      --no-bitcode          don't embed bitcode"
   echo "  -h, --help                display this help and exit"
+  echo
+  echo "Valid platforms: iphoneos, macosx, appletvos, watchos"
+  echo
+  echo "Xcodeproj and target or platform and min version must be set."
   echo
   exit 1
 }
@@ -99,68 +113,117 @@ export ARCHS=
 export SDK_PLATFORM=
 export EMBED_BITCODE="-fembed-bitcode"
 
-OSX_ARCHS="x86_64"
-IOS_ARCHS="armv7 armv7s arm64"
-
 BUILD_OSX=false
 BUILD_SSL=true
 BUILD_SSH=true
 CLEAN_BUILD=true
 
-while getopts ':a:l:o:v:s:h-' OPTION ; do
+XCODE_PROJECT=
+TARGET_NAME=
+
+while getopts 'a:p:l:o:v:s:x:t:h-' OPTION ; do
   case "$OPTION" in
     a) ARCHS="$OPTARG" ;;
+    p) SDK_PLATFORM="$OPTARG" ;;
     v) MIN_VERSION="$OPTARG" ;;
     s) SDK_VERSION="$OPTARG" ;;
     l) LIBSSH_VERSION="$OPTARG" ;;
     o) LIBSSL_VERSION="$OPTARG" ;;
+    x) XCODE_PROJECT="$OPTARG" ;;
+    t) TARGET_NAME="$OPTARG" ;;
     h) usageHelp ;;
-    -) [[ $OPTIND -ge 1 ]] && optind=$(expr $OPTIND - 1 ) || optind=$OPTIND
-         eval FULL_OPTION="\$$optind"
-         OPTARG=$(echo $FULL_OPTION | cut -d'=' -f2)
-         OPTION=$(echo $FULL_OPTION | cut -d'=' -f1)
-         case "$OPTION" in
-             --archs) ARCHS="$OPTARG" ;;
-             --openssl) LIBSSL_VERSION="$OPTARG" ;;
-             --libssh2) LIBSSH_VERSION="$OPTARG" ;;
-             --sdk-version) SDK_VERSION="$OPTARG" ;;
-             --min-version) MIN_VERSION="$OPTARG" ;;
-             --build-only-openssl) BUILD_SSH=false ;;
-             --only-print-env) BUILD_SSL=false; BUILD_SSH=false ;;
-             --osx) BUILD_OSX=true ;;
-             --no-bitcode) EMBED_BITCODE="" ;;
-             --no-clean) CLEAN_BUILD=false ;;
-             --help) usageHelp ;;
-             * ) echo "$SCRIPTNAME: Invalid option '$FULL_OPTION'"
-                  echo "Try '$SCRIPTNAME --help' for more information."
-                  exit 1 ;;
-         esac
-       OPTIND=1
+    -) eval FULL_OPTION="\$$OPTIND"
+       OPTARG=$(echo $FULL_OPTION | cut -d'=' -f2)
+       OPTION=$(echo $FULL_OPTION | cut -d'=' -f1)
+       case "$OPTION" in
+         --archs) ARCHS="$OPTARG" ;;
+         --platform) SDK_PLATFORM="$OPTARG" ;;
+         --openssl) LIBSSL_VERSION="$OPTARG" ;;
+         --libssh2) LIBSSH_VERSION="$OPTARG" ;;
+         --sdk-version) SDK_VERSION="$OPTARG" ;;
+         --min-version) MIN_VERSION="$OPTARG" ;;
+         --xcodeproj) XCODE_PROJECT="$OPTARG" ;;
+         --target) TARGET_NAME="$OPTARG" ;;
+         --build-only-openssl) BUILD_SSH=false ;;
+         --only-print-env) BUILD_SSL=false; BUILD_SSH=false ;;
+         --osx) BUILD_OSX=true ;;
+         --no-bitcode) EMBED_BITCODE="" ;;
+         --no-clean) CLEAN_BUILD=false ;;
+         --help) usageHelp ;;
+         * ) echo "$SCRIPTNAME: Invalid option '$FULL_OPTION'"
+             echo "Run '$SCRIPTNAME --help' for more information."
+             exit 1 ;;
+       esac
        shift
       ;;
     \?) echo "$SCRIPTNAME: Invalid option -- $OPTION"
-        echo "Try '$SCRIPTNAME --help' for more information."
+        echo "Run '$SCRIPTNAME --help' for more information."
         exit 1 ;;
   esac
+  shift $((OPTIND - 1))
+  OPTIND=1
 done
 
 echo "Initializing..."
 
-if [[ -z "$MIN_VERSION" ]]; then
-  if [[ $BUILD_OSX == true ]]; then
-    MIN_VERSION="10.10"
-  else
-    MIN_VERSION="8.0"
-  fi
+XCODE_VERSION=`xcodebuild -version | grep Xcode | cut -d' ' -f2`
+
+if [[ ! -z "$XCODE_PROJECT" ]] && [[ ! -z "$TARGET_NAME" ]]; then
+  BUILD_SETTINGS=`xcodebuild -project "$XCODE_PROJECT" -target "$TARGET_NAME" -showBuildSettings`
+  SDK_PLATFORM=`getBuildSetting "$BUILD_SETTINGS" "PLATFORM_NAME"`
+  MIN_VERSION=`getBuildSetting "$BUILD_SETTINGS" "${SDK_PLATFORM}_DEPLOYMENT_TARGET"`
+  TARGET_ARCHS=`getBuildSetting "$BUILD_SETTINGS" "VALID_ARCHS"`
 fi
 
-if [[ -z "$ARCHS" ]]; then
-  if [[ $BUILD_OSX == true ]]; then
-    ARCHS="$OSX_ARCHS"
-  else
-    ARCHS="$IOS_ARCHS $OSX_ARCHS"
-  fi
+if [[ -z "$MIN_VERSION" ]]; then
+  echo "$SCRIPTNAME: Minimum platform version must be specified."
+  echo "Run '$SCRIPTNAME --help' for more information."
+  exit 1
 fi
+
+if [[  "$SDK_PLATFORM" == "macosx" ]] || [[ "$SDK_PLATFORM" == "iphoneos" ]] || [[ "$SDK_PLATFORM" == "appletvos" ]] || [[ "$SDK_PLATFORM" == "watchos" ]]; then
+  if [[ -z "$ARCHS" ]]; then
+    ARCHS="$TARGET_ARCHS"
+
+    if [[ "$SDK_PLATFORM" == "macosx" ]]; then
+      if [[ -z "$ARCHS" ]]; then
+        ARCHS="i386 x86_64"
+      fi
+    elif [[ "$SDK_PLATFORM" == "iphoneos" ]]; then
+      if [[ -z "$ARCHS" ]]; then
+        ARCHS="arm64"
+
+        if [[ $(version "$XCODE_VERSION") == $(version "10.1") ]] || [[ $(version "$XCODE_VERSION") > $(version "10.1") ]]; then
+          ARCHS="$ARCHS arm64e"
+        fi
+
+        if [[ $(version "$MIN_VERSION") < $(version "10.0") ]]; then
+          ARCHS="$ARCHS armv7 armv7s"
+        fi
+      fi
+
+      ARCHS="$ARCHS x86_64"
+
+      if [[ $(version "$MIN_VERSION") < $(version "10.0") ]]; then
+        ARCHS="$ARCHS i386"
+      fi
+    elif [[ "$SDK_PLATFORM" == "appletvos" ]]; then
+      ARCHS="$ARCHS arm64 x86_64"
+    elif [[ "$SDK_PLATFORM" == "watchos" ]]; then
+      ARCHS="$ARCHS i386 armv7k"
+
+      if [[ $(version "$XCODE_VERSION") == $(version "10.0") ]] || [[ $(version "$XCODE_VERSION") > $(version "10.0") ]]; then
+        ARCHS="$ARCHS arm64_32"
+      fi
+    fi
+  fi
+else
+  echo "$SCRIPTNAME: Unknown platform '$SDK_PLATFORM'"
+  echo "Run '$SCRIPTNAME --help' for more information."
+  exit 1
+fi
+
+ARCHS="$(echo "$ARCHS" | tr ' ' '\n' | sort -u | tr '\n' ' ')"
 
 LIBSSH_AUTO=false
 if [[ -z "$LIBSSH_VERSION" ]]; then
@@ -170,12 +233,6 @@ fi
 LIBSSL_AUTO=false
 if [[ -z "$LIBSSL_VERSION" ]]; then
   getOpensslVersion
-fi
-
-if [[ $BUILD_OSX == true ]]; then
-  SDK_PLATFORM="macosx"
-else
-  SDK_PLATFORM="iphoneos"
 fi
 
 SDK_AUTO=false
@@ -217,7 +274,8 @@ else
 fi
 
 echo "Architectures: $ARCHS"
-echo "OS min version: $MIN_VERSION"
+echo "Platform: $SDK_PLATFORM"
+echo "Platform min version: $MIN_VERSION"
 echo
 
 #Build

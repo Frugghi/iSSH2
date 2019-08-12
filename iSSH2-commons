@@ -70,3 +70,29 @@ importHeaders () {
   mkdir -p "$output"
   cp -RL "$input" "$output"
 }
+
+platformName () {
+  case "$1" in
+    macosx) echo "MacOSX" ;;
+    iphoneos)
+      if [[ "$2" == "i386" ]] || [[ "$2" == "x86_64" ]]; then
+        echo "iPhoneSimulator"
+      else
+        echo "iPhoneOS"
+      fi ;;
+    appletvos)
+      if [[ "$2" == "i386" ]] || [[ "$2" == "x86_64" ]]; then
+        echo "AppleTVSimulator"
+      else
+        echo "AppleTVOS"
+      fi ;;
+    watchos)
+      if [[ "$2" == "i386" ]] || [[ "$2" == "x86_64" ]]; then
+        echo "WatchSimulator"
+      else
+        echo "WatchOS"
+      fi ;;
+    *) echo "Unknown platform $1"
+       exit 1 ;;
+  esac
+}
