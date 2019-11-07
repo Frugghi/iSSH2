@@ -187,7 +187,11 @@ if [[  "$SDK_PLATFORM" == "macosx" ]] || [[ "$SDK_PLATFORM" == "iphoneos" ]] || 
 
     if [[ "$SDK_PLATFORM" == "macosx" ]]; then
       if [[ -z "$ARCHS" ]]; then
-        ARCHS="i386 x86_64"
+        ARCHS="x86_64"
+
+        if [[ $(version "$XCODE_VERSION") < $(version "10.0") ]]; then
+          ARCHS="$ARCHS i386"
+        fi
       fi
     elif [[ "$SDK_PLATFORM" == "iphoneos" ]]; then
       if [[ -z "$ARCHS" ]]; then
@@ -273,6 +277,7 @@ else
   echo "SDK version: $SDK_VERSION"
 fi
 
+echo "Xcode version: $XCODE_VERSION (Automatically detected)"
 echo "Architectures: $ARCHS"
 echo "Platform: $SDK_PLATFORM"
 echo "Platform min version: $MIN_VERSION"
