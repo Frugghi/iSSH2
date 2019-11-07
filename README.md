@@ -16,11 +16,11 @@ iSSH2 is a bash script for compiling Libssh2 (and OpenSSL) for iOS, macOS, watch
 
 ## Tested with
 
-- Xcode: 10.2.1
-- iOS SDK: 12.2
+- Xcode: 11.2
+- iOS SDK: 13.2
 - Libssh2: 1.9.0
-- OpenSSL: 1.1.1c
-- Architectures: arm64 arm64e armv7 armv7s i386 x86_64
+- OpenSSL: 1.1.1d
+- Architectures: arm64 arm64e x86_64
 
 ## How to use
 
