@@ -76,7 +76,13 @@ do
     export CFLAGS="-arch $ARCH -pipe -no-cpp-precomp -isysroot $SDKROOT -m$SDK_PLATFORM-version-min=$MIN_VERSION $EMBED_BITCODE"
     export CPPFLAGS="-arch $ARCH -pipe -no-cpp-precomp -isysroot $SDKROOT -m$SDK_PLATFORM-version-min=$MIN_VERSION"
 
-    ./Configure --host=$HOST --prefix="$PLATFORM_OUT" --disable-debug --disable-dependency-tracking --disable-silent-rules --disable-examples-build --with-libz --with-openssl --with-libssl-prefix="$OPENSSLDIR" --disable-shared --enable-static  >> "$LOG" 2>&1
+    if [[ $(./configure --help | grep -c -- --with-openssl) -eq 0 ]]; then
+      CRYPTO_BACKEND_OPTION="--with-crypto=openssl"
+    else
+      CRYPTO_BACKEND_OPTION="--with-openssl"
+    fi
+
+    ./configure --host=$HOST --prefix="$PLATFORM_OUT" --disable-debug --disable-dependency-tracking --disable-silent-rules --disable-examples-build --with-libz $CRYPTO_BACKEND_OPTION --with-libssl-prefix="$OPENSSLDIR" --disable-shared --enable-static  >> "$LOG" 2>&1
 
     make >> "$LOG" 2>&1
     make -j "$BUILD_THREADS" install >> "$LOG" 2>&1
