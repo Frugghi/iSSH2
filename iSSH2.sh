@@ -216,6 +216,9 @@ if [[  "$SDK_PLATFORM" == "macosx" ]] || [[ "$SDK_PLATFORM" == "iphoneos" ]] || 
         if [[ $(version "$MIN_VERSION") < $(version "10.0") ]]; then
           ARCHS="$ARCHS armv7 armv7s"
         fi
+        if [[ $(version "$XCODE_VERSION") -ge $(version "12.0") ]]; then
+          ARCHS="$ARCHS arm64"
+        fi
       fi
 
       ARCHS="$ARCHS x86_64"
