@@ -48,7 +48,7 @@ cleanupAll () {
 
 getLibssh2Version () {
   if type git >/dev/null 2>&1; then
-    LIBSSH_VERSION=`git ls-remote --tags https://github.com/libssh2/libssh2.git | egrep "libssh2-[0-9]+(\.[0-9])*[a-zA-Z]?$" | cut -f 2 -d - | sort -t . -r | head -n 1`
+    LIBSSH_VERSION=`git ls-remote --tags https://github.com/libssh2/libssh2.git | egrep "libssh2-[0-9]+\.([0-9])+\.?[0-9]*[a-zA-Z\.\-]*?$" | cut -f 2 -d - | sort -V -r | head -n 1`
     LIBSSH_AUTO=true
   else
     >&2 echo "Install git to automatically get the latest Libssh2 version or use the --libssh2 argument"
@@ -60,7 +60,7 @@ getLibssh2Version () {
 
 getOpensslVersion () {
   if type git >/dev/null 2>&1; then
-    LIBSSL_VERSION=`git ls-remote --tags git://git.openssl.org/openssl.git | egrep "OpenSSL(_[0-9])+[a-zA-Z]?$" | cut -f 2,3,4 -d _ | sort -t _ -r | head -n 1 | tr _ .`
+    LIBSSL_VERSION=`git ls-remote --tags git://git.openssl.org/openssl.git | egrep "[oO]pen[sS][sS][lL][-_\.][0-9]+[_\.]([0-9])+[_\.]?[0-9]*[a-zA-Z_\.]*?$" | tr '_-' '.' | cut -f 2-4 -d . | sort -V -r | head -1`
     LIBSSL_AUTO=true
   else
     >&2 echo "Install git to automatically get the latest OpenSSL version or use the --openssl argument"
