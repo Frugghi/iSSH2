@@ -37,7 +37,7 @@ mkdir -p "$LIBSSLDIR"
 
 LIBSSL_TAR="openssl-$LIBSSL_VERSION.tar.gz"
 
-downloadFile "https://www.openssl.org/source/$LIBSSL_TAR" "$LIBSSLDIR/$LIBSSL_TAR"
+downloadFile "https://github.com/openssl/openssl/releases/download/openssl-$LIBSSL_VERSION/$LIBSSL_TAR" "$LIBSSLDIR/$LIBSSL_TAR"
 
 LIBSSLSRC="$LIBSSLDIR/src/"
 mkdir -p "$LIBSSLSRC"
