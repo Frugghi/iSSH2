@@ -23,6 +23,14 @@
 # THE SOFTWARE.                                                                #
 ################################################################################
 
+################################################################################
+#                                                                              #
+# Modifications for "bleeding-edge" OpenSSL and libssh2 versions               #
+# by Mikhail Zakharov, Copyright (c) 2024-2026                                 #
+# Licensed under BSD-2-Clause License                                          #
+#                                                                              #
+################################################################################
+
 XCODE_VERSION=`xcodebuild -version | grep Xcode | cut -d' ' -f2`
 
 version () {
@@ -35,9 +43,9 @@ set -e
 
 mkdir -p "$LIBSSLDIR"
 
-LIBSSL_TAR="openssl-$LIBSSL_VERSION.tar.gz"
+LIBSSL_TAR="head-openssl.tgz"
 
-downloadFile "https://www.openssl.org/source/$LIBSSL_TAR" "$LIBSSLDIR/$LIBSSL_TAR"
+downloadFile "https://github.com/openssl/openssl/archive/refs/heads/master.tar.gz" "$LIBSSLDIR/$LIBSSL_TAR"
 
 LIBSSLSRC="$LIBSSLDIR/src/"
 mkdir -p "$LIBSSLSRC"
@@ -47,6 +55,12 @@ echo "Extracting $LIBSSL_TAR"
 tar -zxkf "$LIBSSLDIR/$LIBSSL_TAR" -C "$LIBSSLSRC" --strip-components 1 2>&-
 set -e
 
+LIBSSL_VERSION=$(awk -F '=' '
+  $1 == "MAJOR" {major=$2};
+  $1 == "MINOR" {minor=$2};
+  $1 == "PATCH" {patch=$2};
+  $1 == "PRE_RELEASE_TAG" {tag=$2};
+  END {printf("%s.%s.%s_%s", major, minor, patch, tag)}' $LIBSSLDIR/src/VERSION.dat)
 echo "Building OpenSSL $LIBSSL_VERSION, please wait..."
 
 for ARCH in $ARCHS
@@ -69,8 +83,8 @@ do
     cp -R "$LIBSSLSRC"  "$OPENSSLDIR"
     cd "$OPENSSLDIR"
 
-    LOG="$OPENSSLDIR/build-openssl.log"
-    touch $LOG
+    LOG="$LOGPATH/build-openssl.log"
+    : > $LOG
 
     if [[ "$SDK_PLATFORM" == "macosx" ]]; then
       if [[ "$ARCH" == "x86_64" ]]; then

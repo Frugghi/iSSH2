@@ -23,15 +23,23 @@
 # THE SOFTWARE.                                                                #
 ################################################################################
 
+################################################################################
+#                                                                              #
+# Modifications for "bleeding-edge" OpenSSL and libssh2 versions               #
+# by Mikhail Zakharov, Copyright (c) 2024-2026                                 #
+# Licensed under BSD-2-Clause License                                          #
+#                                                                              #
+################################################################################
+
 source "$BASEPATH/iSSH2-commons"
 
 set -e
 
 mkdir -p "$LIBSSHDIR"
 
-LIBSSH_TAR="libssh2-$LIBSSH_VERSION.tar.gz"
+LIBSSH_TAR="head-libssh2.tgz"
 
-downloadFile "http://www.libssh2.org/download/$LIBSSH_TAR" "$LIBSSHDIR/$LIBSSH_TAR"
+downloadFile "https://github.com/libssh2/libssh2/archive/refs/heads/master.tar.gz" "$LIBSSHDIR/$LIBSSH_TAR"
 
 LIBSSHSRC="$LIBSSHDIR/src/"
 mkdir -p "$LIBSSHSRC"
@@ -41,6 +49,7 @@ echo "Extracting $LIBSSH_TAR"
 tar -zxkf "$LIBSSHDIR/$LIBSSH_TAR" -C "$LIBSSHDIR/src" --strip-components 1 2>&-
 set -e
 
+LIBSSH_VERSION=$(awk '$1 == "#define" && $2 == "LIBSSH2_VERSION" {split($3, _, "\""); print(_[2])}' $LIBSSHDIR/src/include/libssh2.h)
 echo "Building Libssh2 $LIBSSH_VERSION:"
 
 for ARCH in $ARCHS
@@ -60,8 +69,8 @@ do
     cp -R "$LIBSSHSRC" "$PLATFORM_SRC"
     cd "$PLATFORM_SRC"
 
-    LOG="$PLATFORM_OUT/build-libssh2.log"
-    touch $LOG
+    LOG="$LOGPATH/$ARCH-build-libssh2.log"
+    : > $LOG
 
     if [[ "$ARCH" == arm64* ]]; then
       HOST="aarch64-apple-darwin"
@@ -76,6 +85,7 @@ do
     export CFLAGS="-arch $ARCH -pipe -no-cpp-precomp -isysroot $SDKROOT -m$SDK_PLATFORM-version-min=$MIN_VERSION $EMBED_BITCODE"
     export CPPFLAGS="-arch $ARCH -pipe -no-cpp-precomp -isysroot $SDKROOT -m$SDK_PLATFORM-version-min=$MIN_VERSION"
 
+    autoreconf -fi
     if [[ $(./configure --help | grep -c -- --with-openssl) -eq 0 ]]; then
       CRYPTO_BACKEND_OPTION="--with-crypto=openssl"
     else
